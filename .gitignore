@@ -11,3 +11,4 @@ wheels/
 data/
 checkpoints/
 *.v
+*.vcd

@@ -8,7 +8,7 @@ dependencies = [
     "amaranth>=0.5.8",
     "amaranth-yosys>=0.50.0.0.post121",
     "matplotlib>=3.10.8",
-    "numpy>=2.4.3",
+    "numpy<2.0.0",
     "pydantic>=2.12.5",
     "torch",
     "torchvision",
