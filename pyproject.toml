@@ -1,0 +1,21 @@
+[project]
+name = "asic-project"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "amaranth>=0.5.8",
+    "matplotlib>=3.10.8",
+    "numpy>=2.4.3",
+    "pydantic>=2.12.5",
+    "torch>=2.10.0",
+    "torchvision>=0.25.0",
+]
+
+[dependency-groups]
+dev = [
+    "jupytext>=1.19.1",
+    "marimo>=0.20.4",
+    "pytest>=9.0.2",
+]
