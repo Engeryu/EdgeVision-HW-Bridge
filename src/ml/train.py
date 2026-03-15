@@ -57,8 +57,8 @@ class Trainer:
             total += labels.size(0)
             correct += predicted.eq(labels).sum().item()
 
-            if batch_idx % 100 == 0 and batch_idx > 0:
-                avg_loss = running_loss / 100
+            if (batch_idx % 100 == 0 and batch_idx > 0) or batch_idx == len(self.train_loader) - 1:
+                avg_loss = running_loss / (batch_idx % 100 or 100)
                 accuracy = 100.0 * correct / total
                 print(
                     f"  Batch {batch_idx:03d}/{len(self.train_loader)} | Loss: {avg_loss:.4f} | Acc: {accuracy:.2f}%"
