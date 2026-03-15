@@ -114,7 +114,24 @@ The simulation generates a standard `.vcd` file. You can open it with GTKWave to
 gtkwave mac_simulation.vcd
 ```
 
-#### Optional tuto. How to use the GUI Software `GTKWave`
+#### 🔍 Optional: How to use the GTKWave GUI
+
+GTKWave can be intimidating at first glance. Follow these quick steps to visualize your MAC unit's clock cycles:
+
+- Find the component: In the top-left pane (SST / Search Hierarchy), click on bench and then click on top.
+- Select the signals: In the bottom-left pane, you will see all the pins of our MAC unit (clk, clear, pixel_in, weight_in, result_out).
+- Append them: Select all these signals (using Shift+Click), then click the "Append" button at the bottom of that pane. They will appear in the main signal window.
+- Adjust the view: Click the "Zoom Fit" button (an icon with four arrows pointing outwards in the top toolbar) to fit the entire simulation into your screen.
+- Analyze: You can now click anywhere on the waveform graph to see the exact integer values of the pixels and weights at any given microsecond, and watch the accumulator (result_out) update on every rising edge of the clock (clk).
+
+### 🔮 Future Work & Scaling
+
+While this repository successfully demonstrates the core Software-to-Hardware bridge and cycle-accurate MAC operations, scaling this into a full-fledged Edge AI accelerator (ASIC/FPGA) would require the following architectural additions:
+
+- On-Chip Memory (SRAM/BRAM): Integrating local memory blocks to store the quantized weights and input feature maps directly on the chip, reducing off-chip memory bottlenecks.
+- Control Logic (FSM): Implementing a Finite State Machine to orchestrate the read/write addresses, controlling the loops over the image patches without needing Python to inject data cycle-by-cycle.
+- Systolic Array / Spatial Architecture: Expanding the single MAC unit into a 2D array of MACs to process multiple pixels and filters in parallel, maximizing throughput.
+- System Bus Integration: Wrapping the accelerator with an industry-standard bus interface (e.g., AXI4 or AXI-Stream) to allow a host processor (like an ARM Cortex or RISC-V) to offload ML tasks to our IP.
 
 ## 🧠 Technical Highlights
 
