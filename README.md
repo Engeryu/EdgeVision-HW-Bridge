@@ -1,4 +1,4 @@
-# 🌉 ASIC-Project: HW/SW Co-Design for Deep Learning
+# 🌉 EdgeVision HW/SW Co-Design for Deep Learning
 
 This repository demonstrates a complete end-to-end flow from training a Convolutional Neural Network (CNN) in PyTorch to validating its exact cycle-accurate execution on a simulated hardware accelerator designed in Amaranth HDL.
 
@@ -12,11 +12,16 @@ This project bridges the gap between **Data Science / AI** and **Digital ASIC/FP
 - **Exact Co-Simulation:** A robust testbench (`src.hardware.testbench`) that extracts weights and image patches, quantizes them to `int8`, simulates the hardware clock cycle by cycle, and mathematically asserts that the Amaranth hardware output perfectly matches the PyTorch software prediction.
 - **Modern Python Stack:** Managed entirely with `uv` for blazing-fast dependency resolution and `Pydantic` for strict configuration validation.
 
+## 🧠 Technical Highlights
+
+- **Quantization:** Bridging the gap between PyTorch's `float32` and the Hardware's `int8` data bus.
+- **Synchronous Logic:** The Amaranth MAC unit uses a clock domain (`sync`) to accurately model pipeline latencies.
+
 ## 📂 Project Structure
 
 ```text
 .
-├── pyproject.toml        # Project configuration and dependencies (uv)
+├── pyproject.toml        # Project configuration and dependencies (uv/poetry/pip)
 ├── requirements.txt      # pip-compatible dependency export
 ├── environment.yml       # conda environment definition
 ├── initializer.sh        # All-in-one pipeline runner (uv/poetry/conda/pip)
@@ -35,12 +40,33 @@ This project bridges the gap between **Data Science / AI** and **Digital ASIC/FP
 
 ## 🛠️ Getting Started
 
+### 1. Prerequisites
+
+This project requires **Python ≥ 3.13**, as i use a GTX 1070 max-q (latest cuda not supported), however, the project is fully compatible with **Python 3.14**.
+Ensure you have at least one of the following package managers installed:
+
+| Tool                 | Install                                                         |
+| -------------------- | --------------------------------------------------------------- |
+| `uv` _(recommended)_ | [astral.sh/uv](https://docs.astral.sh/uv/)                      |
+| `poetry`             | [python-poetry.org](https://python-poetry.org/docs/)            |
+| `conda`              | [docs.conda.io](https://docs.conda.io/en/latest/miniconda.html) |
+| `pip`                | Bundled with Python ≥ 3.13                                      |
+
+> **Manual command substitution table** — replace `uv run python` in all steps below according to your manager:
+>
+> | Manager  | Replace `uv run python` with          |
+> | -------- | ------------------------------------- |
+> | `uv`     | `uv run python`                       |
+> | `poetry` | `poetry run python`                   |
+> | `conda`  | `conda run -n edgevision python`      |
+> | `pip`    | `source .venv/bin/activate && python` |
+
 ### ⚡ Quick Start (Recommended)
 
-The fastest way to run the full pipeline is via the provided shell script, which handles environment checks, dataset download, training, RTL generation, and co-simulation in one command:
+The fastest way to run the full pipeline is via the provided shell script, which auto-detects your package manager and handles environment checks, dataset download, training, RTL generation, and co-simulation in one command:
 
 ```bash
-chmod +x run.sh
+chmod +x initializer.sh
 ./initializer.sh
 ```
 
@@ -50,42 +76,54 @@ To skip training and reuse an existing checkpoint:
 ./initializer.sh --skip-train
 ```
 
+To force a specific package manager:
+
+```bash
+./initializer.sh --manager pip
+./initializer.sh --manager conda
+./initializer.sh --manager poetry
+```
+
 The script will guide you interactively if a checkpoint already exists (retrain or keep it).
 
-**Prerequisites — choose your package manager:**
-
-| Tool                 | Setup command                                                                          |
-| -------------------- | -------------------------------------------------------------------------------------- |
-| `uv` _(recommended)_ | `uv sync`                                                                              |
-| `pip`                | `python -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt` |
-| `conda`              | `conda env create -f environment.yml && conda activate edgevision`                     |
-| `poetry`             | `poetry install`                                                                       |
-
-> Once dependencies are installed, replace `uv run python` with `python` in all commands below if not using uv.
 > **Manual steps are documented below** for users who prefer to run each stage individually or integrate them into their own workflow.
 
-### 1. Prerequisites
-
-Ensure you have [uv](https://docs.astral.sh/uv/) installed on your system.
-
-This project is compatible with Python 3.14. However, due to PyTorch CUDA compatibility issues with specific older hardware (such as the GTX 1070 Max-Q), the environment is currently locked to Python 3.13.
+---
 
 ### 2. Installation
 
-Clone the repository and sync the dependencies:
+Clone the repository:
 
 ```bash
 git clone git@github.com:Engeryu/EdgeVision-HW-Bridge.git
-cd asic-project
-uv sync
+cd EdgeVision-HW-Bridge
 ```
 
-_Note: If you want to use Python 3.14, you do not need to modify `pyproject.toml` (as it requires `python >= 3.13`). Just update the local version file:_
+Then install dependencies with your package manager:
 
 ```bash
-echo "3.14" > .python-version
+# uv (recommended)
 uv sync
+
+# poetry
+poetry install
+
+# conda
+conda env create -f environment.yml
+conda activate edgevision
+
+# pip
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
 ```
+
+> **uv only** — to use Python 3.14 instead of the default 3.13:
+>
+> ```bash
+> echo "3.14" > .python-version
+> uv sync
+> ```
 
 ### 3. Download the Dataset
 
@@ -95,7 +133,9 @@ Before training or simulating, the CIFAR-10 dataset needs to be downloaded. This
 uv run python -c "from src.ml.dataset import get_dataloaders; get_dataloaders()"
 ```
 
-_(Note: Running the training or testbench scripts will also trigger this download automatically if the folder is missing)._
+> Replace `uv run python` with your manager's equivalent (see substitution table above).
+
+_(Note: Running the training or testbench scripts will also trigger this download automatically if the folder is missing.)_
 
 ### 4. Run the ML Training (Optional)
 
@@ -105,9 +145,11 @@ To train the CNN on CIFAR-10 and generate the model weights inside the `./checkp
 uv run python -m src.ml.train
 ```
 
-You will get an output of the training iteration with metrics, til seeing:
+> Replace `uv run python` with your manager's equivalent (see substitution table above).
 
-```bash
+You will get an output of the training iteration with metrics, until seeing:
+
+```text
 Model successfully saved at: ./checkpoints/cifar10.pth
 The model is ready to be transferred to Hardware!
 ```
@@ -120,6 +162,8 @@ Before running the simulation, you can export the Amaranth hardware design into 
 uv run python -m src.hardware.mac
 ```
 
+> Replace `uv run python` with your manager's equivalent (see substitution table above).
+
 This will generate a `mac.v` file in the root directory.
 
 ### 6. Run the Hardware Co-Simulation (The Magic)
@@ -129,6 +173,8 @@ To extract the data, quantize it to `int8`, run the hardware simulation, and mat
 ```bash
 uv run python -m src.hardware.testbench
 ```
+
+> Replace `uv run python` with your manager's equivalent (see substitution table above).
 
 If successful, the console will output:
 
@@ -144,7 +190,8 @@ Waveform file generated: 'mac_simulation.vcd'
 The simulation generates a standard `.vcd` file. You can open it with GTKWave to inspect the cycle-by-cycle electrical signals of the MAC unit:
 
 ```bash
-# Install gtkwave from your package manager or from source ([https://gtkwave.github.io/gtkwave/install/unix_linux.html](https://gtkwave.github.io/gtkwave/install/unix_linux.html))
+# Install GTKWave from your package manager or from source:
+# https://gtkwave.github.io/gtkwave/install/unix_linux.html
 gtkwave mac_simulation.vcd
 ```
 
@@ -152,22 +199,19 @@ gtkwave mac_simulation.vcd
 
 GTKWave can be intimidating at first glance. Follow these quick steps to visualize your MAC unit's clock cycles:
 
-- Find the component: In the top-left pane (SST / Search Hierarchy), click on bench and then click on top.
-- Select the signals: In the bottom-left pane, you will see all the pins of our MAC unit (clk, clear, pixel_in, weight_in, result_out).
-- Append them: Select all these signals (using Shift+Click), then click the "Append" button at the bottom of that pane. They will appear in the main signal window.
-- Adjust the view: Click the "Zoom Fit" button (an icon with four arrows pointing outwards in the top toolbar) to fit the entire simulation into your screen.
-- Analyze: You can now click anywhere on the waveform graph to see the exact integer values of the pixels and weights at any given microsecond, and watch the accumulator (result_out) update on every rising edge of the clock (clk).
+1. **Find the component:** In the top-left pane (SST / Search Hierarchy), click on `bench` then `top`.
+2. **Select the signals:** In the bottom-left pane, you will see all the pins of our MAC unit (`clk`, `clear`, `pixel_in`, `weight_in`, `result_out`).
+3. **Append them:** Select all signals (Shift+Click), then click the **Append** button at the bottom of that pane.
+4. **Adjust the view:** Click the **Zoom Fit** button to fit the entire simulation into your screen.
+5. **Analyze:** Click anywhere on the waveform to see the exact integer values at any given microsecond, and watch `result_out` update on every rising edge of `clk`.
 
-### 🔮 Future Work & Scaling
+---
+
+## 🔮 Future Work & Scaling
 
 While this repository successfully demonstrates the core Software-to-Hardware bridge and cycle-accurate MAC operations, scaling this into a full-fledged Edge AI accelerator (ASIC/FPGA) would require the following architectural additions:
 
-- On-Chip Memory (SRAM/BRAM): Integrating local memory blocks to store the quantized weights and input feature maps directly on the chip, reducing off-chip memory bottlenecks.
-- Control Logic (FSM): Implementing a Finite State Machine to orchestrate the read/write addresses, controlling the loops over the image patches without needing Python to inject data cycle-by-cycle.
-- Systolic Array / Spatial Architecture: Expanding the single MAC unit into a 2D array of MACs to process multiple pixels and filters in parallel, maximizing throughput.
-- System Bus Integration: Wrapping the accelerator with an industry-standard bus interface (e.g., AXI4 or AXI-Stream) to allow a host processor (like an ARM Cortex or RISC-V) to offload ML tasks to our IP.
-
-## 🧠 Technical Highlights
-
-- **Quantization:** Bridging the gap between PyTorch's `float32` and the Hardware's `int8` data bus.
-- **Synchronous Logic:** The Amaranth MAC unit uses a clock domain (`sync`) to accurately model pipeline latencies.
+- **On-Chip Memory (SRAM/BRAM):** Integrating local memory blocks to store the quantized weights and input feature maps directly on the chip, reducing off-chip memory bottlenecks.
+- **Control Logic (FSM):** Implementing a Finite State Machine to orchestrate the read/write addresses, controlling the loops over the image patches without needing Python to inject data cycle-by-cycle.
+- **Systolic Array / Spatial Architecture:** Expanding the single MAC unit into a 2D array of MACs to process multiple pixels and filters in parallel, maximizing throughput.
+- **System Bus Integration:** Wrapping the accelerator with an industry-standard bus interface (e.g., AXI4 or AXI-Stream) to allow a host processor (like an ARM Cortex or RISC-V) to offload ML tasks to our IP.
