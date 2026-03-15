@@ -17,16 +17,20 @@ This project bridges the gap between **Data Science / AI** and **Digital ASIC/FP
 ```text
 .
 ├── pyproject.toml        # Project configuration and dependencies (uv)
-├── initializer.sh        # All-in-one executable script
-├── src/
-│   ├── config.py         # Global configuration (Pydantic models)
-│   ├── ml/               # Machine Learning Domain (PyTorch)
-│   │   ├── dataset.py    # CIFAR-10 data fetching and augmentation
-│   │   ├── model.py      # CNN Architecture & Hardware Target extraction
-│   │   └── train.py      # Training loop and evaluation
-│   └── hardware/         # Microelectronics Domain (Amaranth)
-│       ├── mac.py        # Hardware MAC Unit design (Generates Verilog)
-│       └── testbench.py  # Co-simulation and VCD waveform generation
+├── requirements.txt      # pip-compatible dependency export
+├── environment.yml       # conda environment definition
+├── initializer.sh        # All-in-one pipeline runner (uv/poetry/conda/pip)
+├── mac.v                 # Generated Verilog RTL (Amaranth export)
+├── mac_simulation.vcd    # Hardware waveform dump (GTKWave)
+└── src/
+    ├── config.py         # Global configuration (Pydantic models)
+    ├── ml/               # Machine Learning Domain (PyTorch)
+    │   ├── dataset.py    # CIFAR-10 data fetching and augmentation
+    │   ├── model.py      # CNN Architecture & Hardware Target extraction
+    │   └── train.py      # Training loop and evaluation
+    └── hardware/         # Microelectronics Domain (Amaranth)
+        ├── mac.py        # Hardware MAC Unit design (Generates Verilog)
+        └── testbench.py  # Co-simulation and VCD waveform generation
 ```
 
 ## 🛠️ Getting Started
