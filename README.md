@@ -25,6 +25,8 @@ This project bridges the gap between **Data Science / AI** and **Digital ASIC/FP
 ├── requirements.txt      # pip-compatible dependency export
 ├── environment.yml       # conda environment definition
 ├── initializer.sh        # All-in-one pipeline runner (uv/poetry/conda/pip)
+├── cleaner.sh            # Removes all runtime-generated files and directories
+├── data_purge.py              # Releases GPU VRAM and system RAM held by PyTorch
 ├── mac.v                 # Generated Verilog RTL (Amaranth export)
 ├── mac_simulation.vcd    # Hardware waveform dump (GTKWave)
 └── src/
@@ -66,7 +68,7 @@ Ensure you have at least one of the following package managers installed:
 The fastest way to run the full pipeline is via the provided shell script, which auto-detects your package manager and handles environment checks, dataset download, training, RTL generation, and co-simulation in one command:
 
 ```bash
-chmod +x initializer.sh
+chmod +x initializer.sh cleaner.sh
 ./initializer.sh
 ```
 
@@ -204,6 +206,31 @@ GTKWave can be intimidating at first glance. Follow these quick steps to visuali
 3. **Append them:** Select all signals (Shift+Click), then click the **Append** button at the bottom of that pane.
 4. **Adjust the view:** Click the **Zoom Fit** button to fit the entire simulation into your screen.
 5. **Analyze:** Click anywhere on the waveform to see the exact integer values at any given microsecond, and watch `result_out` update on every rising edge of `clk`.
+
+---
+
+## 🧹 Maintenance
+
+### Clean generated artifacts
+
+To remove all runtime-generated files and directories (`data/`, `checkpoints/`, `.venv/`, `__pycache__/`, `mac.v`, `*.vcd`):
+
+```bash
+./cleaner.sh          # Interactive — previews targets and asks for confirmation
+./cleaner.sh --force  # Non-interactive — skips prompt
+```
+
+### Purge GPU VRAM and system RAM
+
+After training or co-simulation, PyTorch may hold onto GPU memory. To release it without restarting your Python process:
+
+```bash
+uv run python data_purge.py
+```
+
+> Replace `uv run python` with your manager's equivalent (see substitution table above).
+
+This runs Python's garbage collector, empties the CUDA/ROCm cache, resets memory statistics, and attempts to return fragmented RAM to the OS (Linux only via `malloc_trim`).
 
 ---
 
