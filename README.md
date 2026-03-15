@@ -17,6 +17,7 @@ This project bridges the gap between **Data Science / AI** and **Digital ASIC/FP
 ```text
 .
 ├── pyproject.toml        # Project configuration and dependencies (uv)
+├── initializer.sh        # All-in-one executable script
 ├── src/
 │   ├── config.py         # Global configuration (Pydantic models)
 │   ├── ml/               # Machine Learning Domain (PyTorch)
@@ -29,6 +30,25 @@ This project bridges the gap between **Data Science / AI** and **Digital ASIC/FP
 ```
 
 ## 🛠️ Getting Started
+
+### ⚡ Quick Start (Recommended)
+
+The fastest way to run the full pipeline is via the provided shell script, which handles environment checks, dataset download, training, RTL generation, and co-simulation in one command:
+
+```bash
+chmod +x run.sh
+./initializer.sh
+```
+
+To skip training and reuse an existing checkpoint:
+
+```bash
+./initializer.sh --skip-train
+```
+
+The script will guide you interactively if a checkpoint already exists (retrain or keep it).
+
+> **Manual steps are documented below** for users who prefer to run each stage individually or integrate them into their own workflow.
 
 ### 1. Prerequisites
 
