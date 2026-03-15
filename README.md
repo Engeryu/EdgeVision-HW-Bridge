@@ -17,16 +17,20 @@ This project bridges the gap between **Data Science / AI** and **Digital ASIC/FP
 ```text
 .
 ├── pyproject.toml        # Project configuration and dependencies (uv)
-├── initializer.sh        # All-in-one executable script
-├── src/
-│   ├── config.py         # Global configuration (Pydantic models)
-│   ├── ml/               # Machine Learning Domain (PyTorch)
-│   │   ├── dataset.py    # CIFAR-10 data fetching and augmentation
-│   │   ├── model.py      # CNN Architecture & Hardware Target extraction
-│   │   └── train.py      # Training loop and evaluation
-│   └── hardware/         # Microelectronics Domain (Amaranth)
-│       ├── mac.py        # Hardware MAC Unit design (Generates Verilog)
-│       └── testbench.py  # Co-simulation and VCD waveform generation
+├── requirements.txt      # pip-compatible dependency export
+├── environment.yml       # conda environment definition
+├── initializer.sh        # All-in-one pipeline runner (uv/poetry/conda/pip)
+├── mac.v                 # Generated Verilog RTL (Amaranth export)
+├── mac_simulation.vcd    # Hardware waveform dump (GTKWave)
+└── src/
+    ├── config.py         # Global configuration (Pydantic models)
+    ├── ml/               # Machine Learning Domain (PyTorch)
+    │   ├── dataset.py    # CIFAR-10 data fetching and augmentation
+    │   ├── model.py      # CNN Architecture & Hardware Target extraction
+    │   └── train.py      # Training loop and evaluation
+    └── hardware/         # Microelectronics Domain (Amaranth)
+        ├── mac.py        # Hardware MAC Unit design (Generates Verilog)
+        └── testbench.py  # Co-simulation and VCD waveform generation
 ```
 
 ## 🛠️ Getting Started
@@ -48,6 +52,16 @@ To skip training and reuse an existing checkpoint:
 
 The script will guide you interactively if a checkpoint already exists (retrain or keep it).
 
+**Prerequisites — choose your package manager:**
+
+| Tool                 | Setup command                                                                          |
+| -------------------- | -------------------------------------------------------------------------------------- |
+| `uv` _(recommended)_ | `uv sync`                                                                              |
+| `pip`                | `python -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt` |
+| `conda`              | `conda env create -f environment.yml && conda activate edgevision`                     |
+| `poetry`             | `poetry install`                                                                       |
+
+> Once dependencies are installed, replace `uv run python` with `python` in all commands below if not using uv.
 > **Manual steps are documented below** for users who prefer to run each stage individually or integrate them into their own workflow.
 
 ### 1. Prerequisites

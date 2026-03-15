@@ -1,0 +1,16 @@
+# ===========================================================
+#  File    : environment.yml
+#  Author  : engeryu
+#  Created : 2026-03-15
+#  Modified: 2026-03-15
+# ===========================================================
+
+name: edgevision
+channels:
+  - pytorch
+  - defaults
+dependencies:
+  - python=3.13
+  - pip
+  - pip:
+      - -r requirements.txt
