@@ -10,6 +10,7 @@ from pathlib import Path
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from torch.optim.lr_scheduler import CosineAnnealingLR
 
 from src.config import cfg
 from src.ml.dataset import get_dataloaders
@@ -135,14 +136,16 @@ def train_model(save_dir: str = "./checkpoints"):
     model = SimpleCNN().to(device)
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=cfg.ml.learning_rate)
+    scheduler = CosineAnnealingLR(optimizer, T_max=cfg.ml.epoch)
 
     print(
-        f"Configuration: {cfg.ml.epoch} epochs | Batch Size: {cfg.ml.batch_size} | LR: {cfg.ml.learning_rate}"
+        f"Configuration: {cfg.ml.epoch} epochs | Batch Size: {cfg.ml.batch_size} | LR: {cfg.ml.learning_rate} (CosineAnnealing)"
     )
 
     for epoch in range(1, cfg.ml.epoch + 1):
         print(f"\n--- Iteration {epoch}/{cfg.ml.epoch} ---")
         train_one_epoch(model, train_loader, criterion, optimizer, device)
+        scheduler.step()
 
         val_loss, val_acc = evaluate_model(model, test_loader, criterion, device)
         print(

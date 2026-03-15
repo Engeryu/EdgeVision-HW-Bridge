@@ -2,7 +2,7 @@
 #  File    : dataset.py
 #  Author  : engeryu
 #  Created : 2026-03-14
-#  Modified: 2026-03-14
+#  Modified: 2026-03-15
 # ===========================================================
 
 from pathlib import Path
@@ -49,7 +49,7 @@ def get_dataloaders(data_dir: str = "./data") -> tuple[DataLoader, DataLoader]:
         ]
     )
 
-    print(f"Checking/Downloading CIFAR-10 dans {data_dir}...")
+    print(f"Checking/Downloading CIFAR-10 into {data_dir}...")
 
     train_dataset = datasets.CIFAR10(
         root=data_dir, train=True, download=True, transform=transform_train

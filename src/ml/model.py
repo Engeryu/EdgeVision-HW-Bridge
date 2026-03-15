@@ -2,7 +2,7 @@
 #  File    : model.py
 #  Author  : engeryu
 #  Created : 2026-03-14
-#  Modified: 2026-03-14
+#  Modified: 2026-03-15
 # ===========================================================
 
 import torch
@@ -36,7 +36,7 @@ class SimpleCNN(nn.Module):
         self.adaptive_pool = nn.AdaptiveAvgPool2d((4, 4))
         self.flatten = nn.Flatten()
 
-        # 32 canaux * output (4 * 4) = 512
+        # 32 channels * output (4 * 4) = 512
         self.fc = nn.Linear(in_features=512, out_features=num_classes)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
