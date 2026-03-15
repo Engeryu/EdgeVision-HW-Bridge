@@ -5,6 +5,7 @@
 #  Modified: 2026-03-15
 # ===========================================================
 
+from dataclasses import dataclass
 from pathlib import Path
 
 import torch
@@ -15,6 +16,27 @@ from torch.optim.lr_scheduler import CosineAnnealingLR
 from src.config import cfg
 from src.ml.dataset import get_dataloaders
 from src.ml.model import SimpleCNN
+
+
+@dataclass
+class Metrics:
+    """Tracks loss, correct predictions, and total samples."""
+
+    loss: float = 0.0
+    correct: int = 0
+    total: int = 0
+
+    def reset(self) -> None:
+        self.loss = 0.0
+        self.correct = 0
+        self.total = 0
+
+    @property
+    def accuracy(self) -> float:
+        return 100.0 * self.correct / self.total if self.total else 0.0
+
+    def avg_loss(self, window: int) -> float:
+        return self.loss / window if window else 0.0
 
 
 class Trainer:
@@ -40,9 +62,7 @@ class Trainer:
     def train_one_epoch(self) -> None:
         """Executes a single training epoch over the dataset."""
         self.model.train()
-        running_loss = 0.0
-        correct = 0
-        total = 0
+        metrics = Metrics()
 
         for batch_idx, (inputs, labels) in enumerate(self.train_loader):
             inputs, labels = inputs.to(self.device), labels.to(self.device)
@@ -54,27 +74,22 @@ class Trainer:
             self.optimizer.step()
 
             _, predicted = outputs.max(1)
-            total += labels.size(0)
-            correct += predicted.eq(labels).sum().item()
+            metrics.total += labels.size(0)
+            metrics.correct += predicted.eq(labels).sum().item()
 
             if (batch_idx % 100 == 0 and batch_idx > 0) or batch_idx == len(self.train_loader) - 1:
-                avg_loss = running_loss / (batch_idx % 100 or 100)
-                accuracy = 100.0 * correct / total
+                window = batch_idx % 100 or 100
                 print(
-                    f"  Batch {batch_idx:03d}/{len(self.train_loader)} | Loss: {avg_loss:.4f} | Acc: {accuracy:.2f}%"
+                    f"  Batch {batch_idx:03d}/{len(self.train_loader)} | Loss: {metrics.avg_loss(window):.4f} | Acc: {metrics.accuracy:.2f}%"
                 )
-                running_loss = 0.0
-                correct = 0
-                total = 0
+                metrics.reset()
 
-            running_loss += loss.item()
+            metrics.loss += loss.item()
 
     def evaluate(self) -> tuple[float, float]:
         """Evaluates the model on the test dataset."""
         self.model.eval()
-        test_loss = 0.0
-        test_correct = 0
-        test_total = 0
+        metrics = Metrics()
 
         with torch.no_grad():
             for inputs, labels in self.test_loader:
@@ -82,14 +97,12 @@ class Trainer:
                 outputs = self.model(inputs)
                 loss = self.criterion(outputs, labels)
 
-                test_loss += loss.item()
+                metrics.loss += loss.item()
                 _, predicted = outputs.max(1)
-                test_total += labels.size(0)
-                test_correct += predicted.eq(labels).sum().item()
+                metrics.total += labels.size(0)
+                metrics.correct += predicted.eq(labels).sum().item()
 
-        accuracy = 100.0 * test_correct / test_total
-        avg_loss = test_loss / len(self.test_loader)
-        return avg_loss, accuracy
+        return metrics.avg_loss(len(self.test_loader)), metrics.accuracy
 
     def save(self) -> None:
         """Saves the model weights to the configured directory."""
@@ -116,7 +129,6 @@ class Trainer:
             )
 
         self.save()
-
 
 if __name__ == "__main__":
     Trainer().run()
