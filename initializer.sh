@@ -45,27 +45,34 @@ section() {
 SKIP_TRAIN=false
 FORCED_MANAGER=""
 
-for arg in "$@"; do
-    case $arg in
-    --skip-train) SKIP_TRAIN=true ;;
-    --manager) shift ;; # handled below via index
-    --manager=*) FORCED_MANAGER="${arg#*=}" ;;
-    uv | poetry | conda | pip)
-        # Positional value after --manager
-        [[ -n "$FORCED_MANAGER" ]] || FORCED_MANAGER="$arg"
+while [[ $# -gt 0 ]]; do
+    case $1 in
+    --skip-train)
+        SKIP_TRAIN=true
+        shift
         ;;
-    *) error "Unknown argument: $arg. Usage: ./initializer.sh [--skip-train] [--manager uv|poetry|conda|pip]" ;;
+    --manager)
+        [[ -z "${2:-}" ]] && error "--manager requires a value (uv|poetry|conda|pip)"
+        FORCED_MANAGER="$2"
+        shift 2
+        ;;
+    --manager=*)
+        FORCED_MANAGER="${1#*=}"
+        shift
+        ;;
+    *)
+        error "Unknown argument: $1. Usage: ./initializer.sh [--skip-train] [--manager uv|poetry|conda|pip]"
+        ;;
     esac
 done
 
-# Re-parse --manager <value> (two-token form)
-for i in "${!@}"; do
-    if [[ "${!i}" == "--manager" ]]; then
-        next=$((i + 1))
-        FORCED_MANAGER="${!next:-}"
-        break
-    fi
-done 2>/dev/null || true
+# Validate --manager value if provided
+if [[ -n "$FORCED_MANAGER" ]]; then
+    case "$FORCED_MANAGER" in
+    uv | poetry | conda | pip) ;;
+    *) error "Invalid manager '$FORCED_MANAGER'. Choose from: uv, poetry, conda, pip" ;;
+    esac
+fi
 
 # ═══════════════════════════════════════════════════════════
 # STEP 0 — Environment validation & package manager setup
