@@ -118,6 +118,8 @@ class Trainer:
             f"Configuration: {cfg.ml.epoch} epochs | Batch Size: {cfg.ml.batch_size} | LR: {cfg.ml.learning_rate} (CosineAnnealing)"
         )
 
+        best_acc = 0.0
+
         for epoch in range(1, cfg.ml.epoch + 1):
             print(f"\n--- Iteration {epoch}/{cfg.ml.epoch} ---")
             self.train_one_epoch()
@@ -128,7 +130,11 @@ class Trainer:
                 f"End of Epoch {epoch} | Test Loss: {val_loss:.4f} | Test Acc: {val_acc:.2f}%\n"
             )
 
-        self.save()
+            if val_acc > best_acc:
+                best_acc = val_acc
+                self.save()
+
+        print(f"Best Test Acc: {best_acc:.2f}%")
 
 if __name__ == "__main__":
     Trainer().run()
