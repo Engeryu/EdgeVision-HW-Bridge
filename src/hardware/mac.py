@@ -2,7 +2,7 @@
 #  File    : mac.py
 #  Author  : engeryu
 #  Created : 2026-03-14
-#  Modified: 2026-03-14
+#  Modified: 2026-03-15
 # ===========================================================
 
 from amaranth import Elaboratable, Module, Signal, signed
@@ -12,12 +12,12 @@ from src.config import cfg
 
 class MACUnit(Elaboratable):
     """
-    Unité matérielle de calcul Multiply-Accumulate (MAC).
-    Conçue pour traiter les poids quantifités (int8) issus du modèle PyTorch.
+    Multiply-Accumulate (MAC) hardware unit.
+    Designed to process quantized weights (int8) from the PyTorch model.
     """
 
     def __init__(self, bit_width: int = cfg.hw.bit_width):
-        # --- 1. Définition des broches (Pins / IO) du composant ---
+        # --- 1. Component Pins (IO) Definition ---
 
         # Inputs
         self.pixel_in = Signal(signed(bit_width), name="pixel_in")
@@ -29,7 +29,20 @@ class MACUnit(Elaboratable):
         self.result_out = Signal(signed(bit_width * 3), name="result_out")
 
     def elaborate(self, platform) -> Module:
-        """Description physique des connexions internes du composant."""
+        """
+        Physical description of the component's internal synchronous logic.
+
+        Defines the cycle-by-cycle behavior of the MAC unit:
+        - If the 'clear' signal is high, the accumulator resets to zero.
+        - Otherwise, at each clock tick, the product of the incoming pixel
+          and weight is added to the running total.
+
+        Args:
+            platform: The target FPGA/ASIC platform (unused in pure simulation).
+
+        Returns:
+            Module: The instantiated Amaranth hardware module.
+        """
         m = Module()
 
         with m.If(self.clear):
@@ -53,4 +66,4 @@ if __name__ == "__main__":
             )
         )
 
-    print("Le fichier Verilog 'mac.v' a été généré avec succès !")
+    print("The Verilog file 'mac.v' was successfully generated!")
