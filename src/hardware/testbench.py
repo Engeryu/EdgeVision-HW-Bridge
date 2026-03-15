@@ -5,6 +5,8 @@
 #  Modified: 2026-03-15
 # ===========================================================
 
+from pathlib import Path
+
 import torch
 from amaranth.sim import Simulator
 
@@ -41,8 +43,8 @@ def get_quantized_test_data() -> tuple[torch.Tensor, torch.Tensor, int]:
     Extracts and prepares hardware-targeted weights and image patches for co-simulation.
 
     This utility function performs three main steps:
-    1. Instantiates the untrained model and extracts the 27 weights (3x3x3)
-       from the first convolutional filter.
+    1. Loads the model (from checkpoint if available, otherwise random weights)
+       and extracts the 27 weights (3x3x3) from the first convolutional filter.
     2. Loads the CIFAR-10 dataset and extracts a corresponding 27-pixel patch
        (3x3 spatial area across 3 RGB channels) from the first image.
     3. Quantizes both the weights and pixels to int8, and computes the exact
@@ -56,6 +58,12 @@ def get_quantized_test_data() -> tuple[torch.Tensor, torch.Tensor, int]:
     """
     print("1. Loading PyTorch model and extracting data...")
     model = SimpleCNN()
+    ckpt = Path("./checkpoints/cifar10.pth")
+    if ckpt.exists():
+        model.load_state_dict(torch.load(ckpt, map_location="cpu", weights_only=True))
+        print("  -> Loaded trained weights from checkpoint.")
+    else:
+        print("  -> No checkpoint found, using random weights.")
     sw_weights = model.get_hardware_target_weights(filter_index=0).flatten()
 
     train_loader, _ = get_dataloaders()

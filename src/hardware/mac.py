@@ -25,7 +25,8 @@ class MACUnit(Elaboratable):
 
         self.clear = Signal(name="clear")
 
-        # Output
+        # Max accumulation: 127 * 127 * 27 (3×3×3 kernel)
+        # ~435k → 19 bits needed, *3 gives safe 24-bit margin
         self.result_out = Signal(signed(bit_width * 3), name="result_out")
 
     def elaborate(self, platform) -> Module:
