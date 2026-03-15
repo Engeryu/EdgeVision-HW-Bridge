@@ -48,6 +48,16 @@ To skip training and reuse an existing checkpoint:
 
 The script will guide you interactively if a checkpoint already exists (retrain or keep it).
 
+**Prerequisites — choose your package manager:**
+
+| Tool                 | Setup command                                                                          |
+| -------------------- | -------------------------------------------------------------------------------------- |
+| `uv` _(recommended)_ | `uv sync`                                                                              |
+| `pip`                | `python -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt` |
+| `conda`              | `conda env create -f environment.yml && conda activate edgevision`                     |
+| `poetry`             | `poetry install`                                                                       |
+
+> Once dependencies are installed, replace `uv run python` with `python` in all commands below if not using uv.
 > **Manual steps are documented below** for users who prefer to run each stage individually or integrate them into their own workflow.
 
 ### 1. Prerequisites
