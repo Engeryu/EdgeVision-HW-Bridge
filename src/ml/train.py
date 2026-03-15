@@ -53,7 +53,6 @@ def train_one_epoch(
         loss.backward()
         optimizer.step()
 
-        running_loss += loss.item()
         _, predicted = outputs.max(1)
         total += labels.size(0)
         correct += predicted.eq(labels).sum().item()
@@ -65,6 +64,8 @@ def train_one_epoch(
                 f"  Batch {batch_idx:03d}/{len(train_loader)} | Loss: {avg_loss:.4f} | Acc: {accuracy:.2f}%"
             )
             running_loss = 0.0
+
+        running_loss += loss.item()
 
 
 def evaluate_model(
