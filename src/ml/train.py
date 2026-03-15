@@ -64,6 +64,8 @@ class Trainer:
                     f"  Batch {batch_idx:03d}/{len(self.train_loader)} | Loss: {avg_loss:.4f} | Acc: {accuracy:.2f}%"
                 )
                 running_loss = 0.0
+                correct = 0
+                total = 0
 
             running_loss += loss.item()
 
