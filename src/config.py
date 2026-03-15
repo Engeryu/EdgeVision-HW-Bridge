@@ -9,34 +9,28 @@ from pydantic import BaseModel, Field
 
 
 class MLConfig(BaseModel):
-    """Configuration pour la partie Machine Learning (PyTorch)."""
+    """Machine Learning configuration (PyTorch)."""
 
-    batch_size: int = Field(
-        default=64, description="Taille du batch de la data training input"
-    )
-    epoch: int = Field(default=5, description="Nombre de passages sur le dataset")
-    learning_rate: float = Field(
-        default=1e-3, description="Taux d'apprentissage de l'optimiseur"
-    )
+    batch_size: int = Field(default=64, description="Data Training Input batch size")
+    epoch: int = Field(default=5, description="Number of iteration over dataset")
+    learning_rate: float = Field(default=1e-3, description="Optimizer's Learning Rate")
     num_classes: int = Field(
-        default=10, description="10 pour CIFAR-10, 200 pour Tiny-Imagenet"
+        default=10, description="10 for CIFAR-10, 200 for Tiny-Imagenet"
     )
 
 
 class HardwareConfig(BaseModel):
-    """Configuration pour la partie Microélectronique (Amaranth)."""
+    """Microelectronic part configuration (Amaranth)."""
 
-    bit_width: int = Field(
-        default=8, description="Largeur des bus de données en bits (e.g: int8)"
-    )
+    bit_width: int = Field(default=8, description="Data bus width in bits (e.g: int8)")
 
 
 class ProjectConfig(BaseModel):
-    """Configuration globale unifiant le ML et le Hardware."""
+    """Unified configuration for ML & Hardware."""
 
     ml: MLConfig = Field(default_factory=MLConfig)
     hw: HardwareConfig = Field(default_factory=HardwareConfig)
 
 
-# instance globale e.g: from src.config import cfg
+# Globale Instance - e.g: from src.config import cfg
 cfg = ProjectConfig()
