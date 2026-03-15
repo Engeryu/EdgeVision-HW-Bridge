@@ -61,7 +61,7 @@ This project is compatible with Python 3.14. However, due to PyTorch CUDA compat
 Clone the repository and sync the dependencies:
 
 ```bash
-git clone <your-repo-url>
+git clone git@github.com:Engeryu/EdgeVision-HW-Bridge.git
 cd asic-project
 uv sync
 ```
