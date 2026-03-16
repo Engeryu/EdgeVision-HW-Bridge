@@ -26,13 +26,13 @@ This project bridges the gap between **Data Science / AI** and **Digital ASIC/FP
 ├── environment.yml       # conda environment definition
 ├── initializer.sh        # All-in-one pipeline runner (uv/poetry/conda/pip)
 ├── cleaner.sh            # Removes all runtime-generated files and directories
-├── data_purge.py              # Releases GPU VRAM and system RAM held by PyTorch
+├── data_purge.py         # Releases GPU VRAM and system RAM held by PyTorch
 ├── mac.v                 # Generated Verilog RTL (Amaranth export)
 ├── mac_simulation.vcd    # Hardware waveform dump (GTKWave)
 └── src/
     ├── config.py         # Global configuration (Pydantic models)
     ├── ml/               # Machine Learning Domain (PyTorch)
-    │   ├── dataset.py    # CIFAR-10 data fetching and augmentation
+    │   ├── dataset.py    # Multi-dataset factory (CIFAR-10, Tiny-ImageNet, ImageNet)
     │   ├── model.py      # CNN Architecture & Hardware Target extraction
     │   └── train.py      # Training loop and evaluation
     └── hardware/         # Microelectronics Domain (Amaranth)
@@ -127,9 +127,17 @@ pip install -r requirements.txt
 > uv sync
 > ```
 
-### 3. Download the Dataset
+### 3. Configure and Download the Dataset
 
-Before training or simulating, the CIFAR-10 dataset needs to be downloaded. This step will automatically create a `./data` directory in the root folder:
+The active dataset is configured via `cfg.ml.dataset` in `src/config.py`. Three datasets are supported:
+
+| Dataset         | Classes | Resolution | Download            |
+| --------------- | ------- | ---------- | ------------------- |
+| `cifar10`       | 10      | 32×32      | Automatic           |
+| `tiny-imagenet` | 200     | 64×64      | Automatic (~236 MB) |
+| `imagenet`      | 1000    | 224×224    | Manual (see below)  |
+
+To trigger the download manually:
 
 ```bash
 uv run python -c "from src.ml.dataset import get_dataloaders; get_dataloaders()"
@@ -137,7 +145,9 @@ uv run python -c "from src.ml.dataset import get_dataloaders; get_dataloaders()"
 
 > Replace `uv run python` with your manager's equivalent (see substitution table above).
 
-_(Note: Running the training or testbench scripts will also trigger this download automatically if the folder is missing.)_
+_(Note: Running the training or testbench scripts will also trigger the download automatically if the dataset is missing.)_
+
+> **ImageNet** cannot be downloaded automatically. Register at [image-net.org](https://image-net.org) and place the dataset at `./data/imagenet/train/` and `./data/imagenet/val/`.
 
 ### 4. Run the ML Training (Optional)
 
@@ -152,9 +162,20 @@ uv run python -m src.ml.train
 You will get an output of the training iteration with metrics, until seeing:
 
 ```text
-Model successfully saved at: ./checkpoints/cifar10.pth
+Checkpoint saved: checkpoints/<dataset>.pth (epoch=N, acc=XX.XX%)
 The model is ready to be transferred to Hardware!
+Best Test Acc: XX.XX%
 ```
+
+The active model is selected automatically based on the configured dataset:
+
+| Dataset         | Model       | Notes                       |
+| --------------- | ----------- | --------------------------- |
+| `cifar10`       | `SimpleCNN` | Hardware-bridge compatible  |
+| `tiny-imagenet` | `ResNet-18` | Trained from scratch        |
+| `imagenet`      | `ResNet-50` | Pretrained ImageNet weights |
+
+Hyperparameters (optimizer, LR, scheduler) are automatically preset per dataset. Manual overrides in `src/config.py` always take precedence.
 
 ### 5. Generate the Hardware RTL (Verilog)
 
