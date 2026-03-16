@@ -2,7 +2,7 @@
 #  File    : testbench.py
 #  Author  : engeryu
 #  Created : 2026-03-14
-#  Modified: 2026-03-15
+#  Modified: 2026-03-16
 # ===========================================================
 
 from pathlib import Path
@@ -60,7 +60,11 @@ def get_quantized_test_data() -> tuple[torch.Tensor, torch.Tensor, int]:
     model = SimpleCNN()
     ckpt = Path("./checkpoints/cifar10.pth")
     if ckpt.exists():
-        model.load_state_dict(torch.load(ckpt, map_location="cpu", weights_only=True))
+        checkpoint = torch.load(ckpt, map_location="cpu", weights_only=True)
+        if isinstance(checkpoint, dict) and "model_state_dict" in checkpoint:
+            model.load_state_dict(checkpoint["model_state_dict"])
+        else:
+            model.load_state_dict(checkpoint)
         print("  -> Loaded trained weights from checkpoint.")
     else:
         print("  -> No checkpoint found, using random weights.")
