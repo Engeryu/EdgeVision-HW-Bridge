@@ -19,7 +19,7 @@ from torch.optim.lr_scheduler import CosineAnnealingLR, ReduceLROnPlateau
 
 from src.config import cfg
 from src.ml.dataset import get_dataloaders
-from src.ml.model import SimpleCNN
+from src.ml.model import SimpleCNN, get_model
 
 logging.basicConfig(
     level=logging.INFO,
@@ -103,7 +103,7 @@ class Trainer:
             self.device = torch.device("cpu")
 
         self.train_loader, self.test_loader = get_dataloaders()
-        self.model = SimpleCNN().to(self.device)
+        self.model = get_model().to(self.device)
 
         if cfg.ml.compile_model:
             logger.info("Compiling model with torch.compile()...")
