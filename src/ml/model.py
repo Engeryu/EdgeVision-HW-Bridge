@@ -2,7 +2,7 @@
 #  File    : model.py
 #  Author  : engeryu
 #  Created : 2026-03-14
-#  Modified: 2026-03-15
+#  Modified: 2026-03-16
 # ===========================================================
 
 import torch
@@ -21,14 +21,18 @@ class SimpleCNN(nn.Module):
         super().__init__()
 
         # --- Block 1 - Hardware Target (Weight extraction layer for Amaranth) ---
-        self.conv1 = nn.Conv2d(in_channels=3, out_channels=16, kernel_size=3, padding=1)
+        # BatchNorm2d normalizes activations after each conv layer, reducing
+        # internal covariate shift and stabilizing gradient flow during training.
+        self.conv1 = nn.Conv2d(in_channels=3, out_channels=32, kernel_size=3, padding=1)
+        self.bn1 = nn.BatchNorm2d(32)
         self.relu1 = nn.ReLU()
         self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2)
 
         # --- Block 2 - Deeper feature extraction ---
         self.conv2 = nn.Conv2d(
-            in_channels=16, out_channels=32, kernel_size=3, padding=1
+            in_channels=32, out_channels=64, kernel_size=3, padding=1
         )
+        self.bn2 = nn.BatchNorm2d(64)
         self.relu2 = nn.ReLU()
         self.pool2 = nn.MaxPool2d(kernel_size=2, stride=2)
 
@@ -36,12 +40,19 @@ class SimpleCNN(nn.Module):
         self.adaptive_pool = nn.AdaptiveAvgPool2d((4, 4))
         self.flatten = nn.Flatten()
 
+        # Dropout(p=0.3) before the FC layer randomly deactivates 30% of neurons
+        # during training, acting as a regularizer to reduce overfitting.
         # 32 channels * output (4 * 4) = 512
-        self.fc = nn.Linear(in_features=512, out_features=num_classes)
+        self.dropout = nn.Dropout(p=0.3)
+        self.fc = nn.Linear(in_features=1024, out_features=num_classes)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
         Forward pass of the model.
+
+        Applies two convolutional blocks (Conv → BatchNorm → ReLU → MaxPool),
+        followed by adaptive average pooling, flattening, dropout regularization,
+        and a fully connected classification head.
 
         Args:
             x (torch.Tensor): Input image tensor of shape (Batch, Channels, Height, Width)
@@ -49,10 +60,11 @@ class SimpleCNN(nn.Module):
         Returns:
             torch.Tensor: Prediction logits of shape (Batch, num_classes)
         """
-        x = self.pool1(self.relu1(self.conv1(x)))
-        x = self.pool2(self.relu2(self.conv2(x)))
+        x = self.pool1(self.relu1(self.bn1(self.conv1(x))))
+        x = self.pool2(self.relu2(self.bn2(self.conv2(x))))
         x = self.adaptive_pool(x)
         x = self.flatten(x)
+        x = self.dropout(x)
         x = self.fc(x)
         return x
 
