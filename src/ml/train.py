@@ -202,7 +202,7 @@ class Trainer:
             epoch (int): The epoch index at which the checkpoint is saved.
             best_acc (float): The best validation accuracy achieved so far.
         """
-        save_path = self.save_dir / "cifar10.pth"
+        save_path = self.save_dir / f"{cfg.ml.dataset.replace('-', '_')}.pth"
         torch.save(
             {
                 "model_state_dict": self.model.state_dict(),

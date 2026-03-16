@@ -230,14 +230,17 @@ esac
 # ═══════════════════════════════════════════════════════════
 section "STEP 2 — ML Training (PyTorch)"
 
+CKPT_NAME=$($PYTHON_RUN -c "from src.config import cfg; print(cfg.ml.dataset.replace('-','_'))")
+CKPT_PATH="./checkpoints/${CKPT_NAME}.pth"
+
 if [[ "$SKIP_TRAIN" == true ]]; then
-    if [[ ! -f "./checkpoints/cifar10.pth" ]]; then
-        error "--skip-train requested but no checkpoint found at ./checkpoints/cifar10.pth"
+    if [[ ! -f "./checkpoints/${CKPT_NAME}.pth" ]]; then
+        error "--skip-train requested but no checkpoint found at ./checkpoints/${CKPT_NAME}.pth"
     fi
     warn "--skip-train flag set, skipping training. Using existing checkpoint."
 else
-    if [[ -f "./checkpoints/cifar10.pth" ]]; then
-        warn "Checkpoint already exists at ./checkpoints/cifar10.pth."
+    if [[ -f "./checkpoints/${CKPT_NAME}.pth" ]]; then
+        warn "Checkpoint already exists at ./checkpoints/${CKPT_NAME}.pth."
         read -r -p "        Retrain from scratch? [y/N] " answer
         if [[ "${answer,,}" != "y" ]]; then
             info "Keeping existing checkpoint."
@@ -279,7 +282,7 @@ success "Co-simulation passed. Waveform saved as 'mac_simulation.vcd'."
 section "Pipeline Complete ✓"
 echo -e "  ${GREEN}✔${NC} Package manager  ${MANAGER}"
 echo -e "  ${GREEN}✔${NC} Dataset          ./data/ (${DATASET})"
-echo -e "  ${GREEN}✔${NC} Checkpoint       ./checkpoints/cifar10.pth"
+echo -e "  ${GREEN}✔${NC} Checkpoint       ./checkpoints/${CKPT_NAME}.pth"
 echo -e "  ${GREEN}✔${NC} RTL              ./mac.v"
 echo -e "  ${GREEN}✔${NC} Waveform         ./mac_simulation.vcd"
 echo ""
