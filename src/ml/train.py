@@ -232,6 +232,7 @@ class Trainer:
         logger.info(f"Starting training on: {self.device.type.upper()}")
         logger.info(
             f"Configuration: {cfg.ml.epoch} epochs | Dataset: {cfg.ml.dataset} "
+            f"| Model: {self.model.__class__.__name__} "
             f"| Batch Size: {cfg.ml.batch_size} | LR: {cfg.ml.learning_rate} "
             f"| Scheduler: {cfg.ml.scheduler} | AMP: {cfg.ml.mixed_precision} "
             f"| Compile: {cfg.ml.compile_model}"
