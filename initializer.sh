@@ -3,7 +3,7 @@
 #  File    : initializer.sh
 #  Author  : engeryu
 #  Created : 2026-03-15
-#  Modified: 2026-03-15
+#  Modified: 2026-03-16
 # ===========================================================
 #  Full pipeline runner for the EdgeVision HW/SW Co-Design project.
 #  Executes each step sequentially with environment validation.
@@ -44,11 +44,21 @@ section() {
 # ── Argument parsing ──────────────────────────────────────
 SKIP_TRAIN=false
 FORCED_MANAGER=""
+DATASET=""
 
 while [[ $# -gt 0 ]]; do
     case $1 in
     --skip-train)
         SKIP_TRAIN=true
+        shift
+        ;;
+    --dataset)
+        [[ -z "${2:-}" ]] && error "--dataset requires a value (cifar10|tiny-imagenet|imagenet)"
+        DATASET="$2"
+        shift 2
+        ;;
+    --dataset=*)
+        DATASET="${1#*=}"
         shift
         ;;
     --manager)
@@ -61,10 +71,18 @@ while [[ $# -gt 0 ]]; do
         shift
         ;;
     *)
-        error "Unknown argument: $1. Usage: ./initializer.sh [--skip-train] [--manager uv|poetry|conda|pip]"
+        error "Unknown argument: $1. Usage: ./initializer.sh [--skip-train] [--dataset cifar10|tiny-imagenet|imagenet] [--manager uv|poetry|conda|pip]"
         ;;
     esac
 done
+
+# Validate --dataset value if provided
+if [[ -n "$DATASET" ]]; then
+    case "$DATASET" in
+    cifar10 | tiny-imagenet | imagenet) ;;
+    *) error "Invalid dataset '$DATASET'. Choose from: cifar10, tiny-imagenet, imagenet" ;;
+    esac
+fi
 
 # Validate --manager value if provided
 if [[ -n "$FORCED_MANAGER" ]]; then
@@ -168,15 +186,44 @@ esac
 # ═══════════════════════════════════════════════════════════
 # STEP 1 — Dataset
 # ═══════════════════════════════════════════════════════════
-section "STEP 1 — CIFAR-10 Dataset"
 
-if [[ -d "./data/cifar-10-batches-py" ]]; then
-    warn "Dataset already present in ./data — skipping download."
-else
-    info "Downloading CIFAR-10..."
-    $PYTHON_RUN -c "from src.ml.dataset import get_dataloaders; get_dataloaders()"
-    success "Dataset ready."
+# Resolve active dataset: CLI flag > cfg.ml.dataset
+if [[ -z "$DATASET" ]]; then
+    DATASET=$($PYTHON_RUN -c "from src.config import cfg; print(cfg.ml.dataset)")
 fi
+
+section "STEP 1 — Dataset (${DATASET})"
+
+case "$DATASET" in
+
+cifar10)
+    if [[ -d "./data/cifar-10-batches-py" ]]; then
+        warn "CIFAR-10 already present in ./data — skipping download."
+    else
+        info "Downloading CIFAR-10..."
+        $PYTHON_RUN -c "from src.ml.dataset import get_dataloaders; get_dataloaders()"
+        success "CIFAR-10 ready."
+    fi
+    ;;
+
+tiny-imagenet)
+    if [[ -d "./data/tiny-imagenet-200" ]]; then
+        warn "Tiny-ImageNet already present in ./data — skipping download."
+    else
+        info "Downloading Tiny-ImageNet (~236 MB)..."
+        $PYTHON_RUN -c "from src.ml.dataset import get_dataloaders; get_dataloaders()"
+        success "Tiny-ImageNet ready."
+    fi
+    ;;
+
+imagenet)
+    if [[ -d "./data/imagenet/train" && -d "./data/imagenet/val" ]]; then
+        warn "ImageNet already present in ./data/imagenet — skipping."
+    else
+        error "ImageNet cannot be downloaded automatically.\nPlease register at https://image-net.org and place the dataset at:\n  ./data/imagenet/train/\n  ./data/imagenet/val/"
+    fi
+    ;;
+esac
 
 # ═══════════════════════════════════════════════════════════
 # STEP 2 — ML Training
@@ -231,7 +278,7 @@ success "Co-simulation passed. Waveform saved as 'mac_simulation.vcd'."
 # ═══════════════════════════════════════════════════════════
 section "Pipeline Complete ✓"
 echo -e "  ${GREEN}✔${NC} Package manager  ${MANAGER}"
-echo -e "  ${GREEN}✔${NC} Dataset          ./data/"
+echo -e "  ${GREEN}✔${NC} Dataset          ./data/ (${DATASET})"
 echo -e "  ${GREEN}✔${NC} Checkpoint       ./checkpoints/cifar10.pth"
 echo -e "  ${GREEN}✔${NC} RTL              ./mac.v"
 echo -e "  ${GREEN}✔${NC} Waveform         ./mac_simulation.vcd"
