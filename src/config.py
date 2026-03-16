@@ -82,20 +82,17 @@ DATASET_PRESETS = {
         "learning_rate": 3e-4,
         "weight_decay": 1e-4,
         "scheduler": "cosine",
-        "num_classes": 10,
     },
     "tiny-imagenet": {
         "optimizer": "adamw",
         "learning_rate": 3e-4,
         "weight_decay": 1e-4,
         "scheduler": "plateau",
-        "num_classes": 200,
     },
     "imagenet": {
         "optimizer": "adamw",
         "learning_rate": 1e-4,
         "weight_decay": 1e-4,
         "scheduler": "cosine",
-        "num_classes": 1000,
     },
 }

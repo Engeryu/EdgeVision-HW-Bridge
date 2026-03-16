@@ -13,7 +13,6 @@ from pathlib import Path
 import numpy as np
 import torch
 import torch.nn as nn
-import torch.optim as optim
 from torch.amp import GradScaler, autocast
 from torch.optim import Adam, AdamW
 from torch.optim.lr_scheduler import CosineAnnealingLR, ReduceLROnPlateau
