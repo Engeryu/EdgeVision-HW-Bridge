@@ -2,25 +2,63 @@
 #  File    : train.py
 #  Author  : engeryu
 #  Created : 2026-03-14
-#  Modified: 2026-03-15
+#  Modified: 2026-03-16
 # ===========================================================
 
+import logging
+import random
 from dataclasses import dataclass
 from pathlib import Path
 
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.optim.lr_scheduler import CosineAnnealingLR
+from torch.amp import GradScaler, autocast
+from torch.optim.lr_scheduler import CosineAnnealingLR, ReduceLROnPlateau
 
 from src.config import cfg
 from src.ml.dataset import get_dataloaders
 from src.ml.model import SimpleCNN
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%H:%M:%S",
+)
+logger = logging.getLogger(__name__)
+
+
+def set_seed(seed: int) -> None:
+    """
+    Sets the global random seed for full reproducibility.
+
+    Applies the seed to Python's random module, NumPy, PyTorch CPU and
+    CUDA backends. Also enables deterministic algorithm selection in
+    cuDNN to eliminate non-determinism from GPU kernel choices.
+
+    Args:
+        seed (int): The seed value to apply globally.
+    """
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    logger.info(f"Global seed set to {seed}.")
+
 
 @dataclass
 class Metrics:
-    """Tracks loss, correct predictions, and total samples."""
+    """
+    Accumulates training or evaluation statistics over a batch window.
+
+    Tracks the running loss, the number of correct predictions, and the
+    total number of samples seen. Provides convenience properties for
+    accuracy and average loss computation, and a reset method to clear
+    state between logging windows.
+    """
 
     loss: float = 0.0
     correct: int = 0
@@ -35,8 +73,10 @@ class Metrics:
     def accuracy(self) -> float:
         return 100.0 * self.correct / self.total if self.total else 0.0
 
-    def avg_loss(self, window: int) -> float:
-        return self.loss / window if window else 0.0
+    def avg_loss(self) -> float:
+        """Returns the mean loss per batch over the current accumulation window."""
+        count = self.total / (cfg.ml.batch_size or 1)
+        return self.loss / count if count else 0.0
 
 
 class Trainer:
@@ -45,6 +85,8 @@ class Trainer:
     def __init__(self, save_dir: str = "./checkpoints"):
         self.save_dir = Path(save_dir)
         self.save_dir.mkdir(parents=True, exist_ok=True)
+
+        set_seed(cfg.ml.seed)
 
         if torch.cuda.is_available():
             self.device = torch.device("cuda")
@@ -55,12 +97,33 @@ class Trainer:
 
         self.train_loader, self.test_loader = get_dataloaders()
         self.model = SimpleCNN().to(self.device)
+
+        if cfg.ml.compile_model:
+            logger.info("Compiling model with torch.compile()...")
+            self.model = torch.compile(self.model)
+
         self.criterion = nn.CrossEntropyLoss()
         self.optimizer = optim.Adam(self.model.parameters(), lr=cfg.ml.learning_rate)
-        self.scheduler = CosineAnnealingLR(self.optimizer, T_max=cfg.ml.epoch)
+
+        if cfg.ml.scheduler == "plateau":
+            self.scheduler = ReduceLROnPlateau(self.optimizer, mode="min", patience=1)
+        else:
+            self.scheduler = CosineAnnealingLR(self.optimizer, T_max=cfg.ml.epoch)
+
+        self.scaler = GradScaler(
+            enabled=cfg.ml.mixed_precision and self.device.type == "cuda"
+        )
 
     def train_one_epoch(self) -> None:
-        """Executes a single training epoch over the dataset."""
+        """
+        Executes a single training epoch over the full dataset.
+
+        Iterates through the training DataLoader, performs the forward pass,
+        computes the cross-entropy loss, and updates weights via backpropagation.
+        Logs loss and accuracy every 100 batches and at the final batch of each epoch.
+        Metrics are reset after each logging window to report per-window averages
+        rather than cumulative values.
+        """
         self.model.train()
         metrics = Metrics()
 
@@ -68,26 +131,41 @@ class Trainer:
             inputs, labels = inputs.to(self.device), labels.to(self.device)
 
             self.optimizer.zero_grad()
-            outputs = self.model(inputs)
-            loss = self.criterion(outputs, labels)
-            loss.backward()
-            self.optimizer.step()
+            with autocast(device_type=self.device.type, enabled=cfg.ml.mixed_precision):
+                outputs = self.model(inputs)
+                loss = self.criterion(outputs, labels)
+            self.scaler.scale(loss).backward()
+            self.scaler.step(self.optimizer)
+            self.scaler.update()
 
+            metrics.loss += loss.item()
             _, predicted = outputs.max(1)
             metrics.total += labels.size(0)
             metrics.correct += predicted.eq(labels).sum().item()
 
-            if (batch_idx % 100 == 0 and batch_idx > 0) or batch_idx == len(self.train_loader) - 1:
-                window = batch_idx % 100 or 100
-                print(
-                    f"  Batch {batch_idx:03d}/{len(self.train_loader)} | Loss: {metrics.avg_loss(window):.4f} | Acc: {metrics.accuracy:.2f}%"
+            is_log_step = batch_idx % 100 == 0 and batch_idx > 0
+            is_last_step = batch_idx == len(self.train_loader) - 1
+
+            if is_log_step or is_last_step:
+                logger.info(
+                    f"  Batch {batch_idx + 1:03d}/{len(self.train_loader)} "
+                    f"| Loss: {metrics.avg_loss():.4f} "
+                    f"| Acc: {metrics.accuracy:.2f}%"
                 )
                 metrics.reset()
 
-            metrics.loss += loss.item()
-
     def evaluate(self) -> tuple[float, float]:
-        """Evaluates the model on the test dataset."""
+        """
+        Evaluates the model on the full test dataset.
+
+        Runs the model in eval mode within a no_grad context to disable
+        gradient computation and batch norm updates. Returns the average
+        cross-entropy loss and the overall classification accuracy across
+        all test batches.
+
+        Returns:
+            tuple[float, float]: (average_loss, accuracy_percentage)
+        """
         self.model.eval()
         metrics = Metrics()
 
@@ -102,39 +180,89 @@ class Trainer:
                 metrics.total += labels.size(0)
                 metrics.correct += predicted.eq(labels).sum().item()
 
-        return metrics.avg_loss(len(self.test_loader)), metrics.accuracy
+        return metrics.avg_loss(), metrics.accuracy
 
-    def save(self) -> None:
-        """Saves the model weights to the configured directory."""
+    def save(self, epoch: int, best_acc: float) -> None:
+        """
+        Saves a self-describing checkpoint to the configured directory.
+
+        Stores the model weights alongside training metadata (epoch index
+        and best validation accuracy) so the checkpoint is resumable and
+        auditable without requiring external context.
+
+        Args:
+            epoch (int): The epoch index at which the checkpoint is saved.
+            best_acc (float): The best validation accuracy achieved so far.
+        """
         save_path = self.save_dir / "cifar10.pth"
-        torch.save(self.model.state_dict(), save_path)
-        print(f"Model successfully saved at: {save_path}")
-        print("The model is ready to be transferred to Hardware!")
+        torch.save(
+            {
+                "model_state_dict": self.model.state_dict(),
+                "optimizer_state_dict": self.optimizer.state_dict(),
+                "scheduler_state_dict": self.scheduler.state_dict(),
+                "epoch": epoch,
+                "best_acc": best_acc,
+            },
+            save_path,
+        )
+        logger.info(
+            f"Checkpoint saved: {save_path} (epoch={epoch}, acc={best_acc:.2f}%)"
+        )
+        logger.info("The model is ready to be transferred to Hardware!")
 
     def run(self) -> None:
-        """Runs the full training pipeline: epochs loop + evaluation + save."""
-        print(f"Starting training on: {self.device.type.upper()}")
-        print(
-            f"Configuration: {cfg.ml.epoch} epochs | Batch Size: {cfg.ml.batch_size} | LR: {cfg.ml.learning_rate} (CosineAnnealing)"
+        """
+        Orchestrates the full training pipeline.
+
+        Manages the epoch loop, calling train_one_epoch and evaluate
+        sequentially. Implements early stopping based on validation accuracy:
+        if no improvement is observed for cfg.ml.early_stopping_patience
+        consecutive epochs, training is halted. The best checkpoint is saved
+        whenever a new accuracy peak is reached. Set early_stopping_patience
+        to 0 in cfg to disable early stopping entirely.
+        """
+        logger.info(f"Starting training on: {self.device.type.upper()}")
+        logger.info(
+            f"Configuration: {cfg.ml.epoch} epochs | Batch Size: {cfg.ml.batch_size} "
+            f"| LR: {cfg.ml.learning_rate} | Scheduler: {cfg.ml.scheduler} "
+            f"| AMP: {cfg.ml.mixed_precision} | Compile: {cfg.ml.compile_model}"
         )
 
         best_acc = 0.0
+        patience_counter = 0
+        patience = cfg.ml.early_stopping_patience
 
         for epoch in range(1, cfg.ml.epoch + 1):
-            print(f"\n--- Iteration {epoch}/{cfg.ml.epoch} ---")
+            logger.info(f"\n--- Iteration {epoch}/{cfg.ml.epoch} ---")
             self.train_one_epoch()
-            self.scheduler.step()
 
-            val_loss, val_acc = self.evaluate()
-            print(
+            if isinstance(self.scheduler, ReduceLROnPlateau):
+                val_loss, val_acc = self.evaluate()
+                self.scheduler.step(val_loss)
+            else:
+                self.scheduler.step()
+                val_loss, val_acc = self.evaluate()
+
+            logger.info(
                 f"End of Epoch {epoch} | Test Loss: {val_loss:.4f} | Test Acc: {val_acc:.2f}%\n"
             )
 
             if val_acc > best_acc:
                 best_acc = val_acc
-                self.save()
+                patience_counter = 0
+                self.save(epoch, best_acc)
+            else:
+                patience_counter += 1
+                logger.info(
+                    f"No improvement for {patience_counter}/{patience} epoch(s)."
+                )
 
-        print(f"Best Test Acc: {best_acc:.2f}%")
+            if patience > 0 and patience_counter >= patience:
+                logger.info(f"Early stopping triggered after {epoch} epochs.")
+                break
+
+        logger.info(f"Best Test Acc: {best_acc:.2f}%")
+
 
 if __name__ == "__main__":
     Trainer().run()
