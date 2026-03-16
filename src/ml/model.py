@@ -42,7 +42,7 @@ class SimpleCNN(nn.Module):
 
         # Dropout(p=0.3) before the FC layer randomly deactivates 30% of neurons
         # during training, acting as a regularizer to reduce overfitting.
-        # 32 channels * output (4 * 4) = 512
+        # 64 channels * output (4 * 4) = 1024
         self.dropout = nn.Dropout(p=0.3)
         self.fc = nn.Linear(in_features=1024, out_features=num_classes)
 

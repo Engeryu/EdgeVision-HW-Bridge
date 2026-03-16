@@ -52,5 +52,5 @@ class ProjectConfig(BaseModel):
     hw: HardwareConfig = Field(default_factory=HardwareConfig)
 
 
-# Globale Instance - e.g: from src.config import cfg
+# Global Instance - e.g: from src.config import cfg
 cfg = ProjectConfig()

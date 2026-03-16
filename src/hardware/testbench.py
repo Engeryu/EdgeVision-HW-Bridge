@@ -5,6 +5,7 @@
 #  Modified: 2026-03-16
 # ===========================================================
 
+import logging
 from pathlib import Path
 
 import torch
@@ -14,6 +15,8 @@ from src.config import cfg
 from src.hardware.mac import MACUnit
 from src.ml.dataset import get_dataloaders
 from src.ml.model import SimpleCNN
+
+logger = logging.getLogger(__name__)
 
 
 def quantize_to_int8(tensor: torch.Tensor) -> torch.Tensor:
@@ -56,7 +59,7 @@ def get_quantized_test_data() -> tuple[torch.Tensor, torch.Tensor, int]:
             - The flattened, quantized pixel tensor.
             - The expected theoretical scalar result of the MAC operation.
     """
-    print("1. Loading PyTorch model and extracting data...")
+    logger.info("1. Loading PyTorch model and extracting data...")
     model = SimpleCNN()
     ckpt = Path("./checkpoints/cifar10.pth")
     if ckpt.exists():
@@ -65,16 +68,16 @@ def get_quantized_test_data() -> tuple[torch.Tensor, torch.Tensor, int]:
             model.load_state_dict(checkpoint["model_state_dict"])
         else:
             model.load_state_dict(checkpoint)
-        print("  -> Loaded trained weights from checkpoint.")
+        logger.info("  -> Loaded trained weights from checkpoint.")
     else:
-        print("  -> No checkpoint found, using random weights.")
+        logger.info("  -> No checkpoint found, using random weights.")
     sw_weights = model.get_hardware_target_weights(filter_index=0).flatten()
 
     train_loader, _ = get_dataloaders()
     images, _ = next(iter(train_loader))
     sw_pixels = images[0, :, 0:3, 0:3].flatten()
 
-    print("2. Quantization from float32 to int8...")
+    logger.info("2. Quantization from float32 to int8...")
     hw_weights = quantize_to_int8(sw_weights)
     hw_pixels = quantize_to_int8(sw_pixels)
 
@@ -105,7 +108,7 @@ def run_hardware_software_cosimulation() -> None:
     print(f"  -> Expected mathematical result: {expected_sw_result}")
 
     # Part 3: Hardware Simulation
-    print("3. Starting hardware simulation (Amaranth)...")
+    logger.info("3. Starting hardware simulation (Amaranth)...")
     mac = MACUnit(bit_width=cfg.hw.bit_width)
     sim = Simulator(mac)
     sim.add_clock(1e-6)

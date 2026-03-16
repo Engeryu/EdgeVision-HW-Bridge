@@ -80,7 +80,14 @@ class Metrics:
 
 
 class Trainer:
-    """Orchestrates the complete training pipeline for the CNN model."""
+    """
+    Orchestrates the complete training pipeline for the CNN model.
+
+    Encapsulates the model, optimizer, scheduler, and data loaders as
+    a single stateful object. Supports AMP mixed precision, configurable
+    LR schedulers, patience-based early stopping, and fully resumable
+    checkpoints. All behavior is driven by the global cfg instance.
+    """
 
     def __init__(self, save_dir: str = "./checkpoints"):
         self.save_dir = Path(save_dir)
@@ -184,11 +191,12 @@ class Trainer:
 
     def save(self, epoch: int, best_acc: float) -> None:
         """
-        Saves a self-describing checkpoint to the configured directory.
+        Saves a fully resumable checkpoint to the configured directory.
 
-        Stores the model weights alongside training metadata (epoch index
-        and best validation accuracy) so the checkpoint is resumable and
-        auditable without requiring external context.
+        Stores model weights, optimizer state, scheduler state, epoch index,
+        and best validation accuracy. The optimizer and scheduler states allow
+        exact training resumption from any checkpoint without loss of momentum
+        or LR schedule position.
 
         Args:
             epoch (int): The epoch index at which the checkpoint is saved.
