@@ -15,7 +15,8 @@ class MLConfig(BaseModel):
     epoch: int = Field(default=5, description="Number of iteration over dataset.")
     learning_rate: float = Field(default=1e-3, description="Optimizer's Learning Rate.")
     num_classes: int = Field(
-        default=10, description="10 for CIFAR-10, 200 for Tiny-Imagenet."
+        default=0,
+        description="Number of output classes. Set to 0 for auto-detection from dataset.",
     )
     scheduler: str = Field(
         default="plateau",
@@ -36,6 +37,14 @@ class MLConfig(BaseModel):
     compile_model: bool = Field(
         default=False,
         description="Enable torch.compile() for kernel-level optimizations (PyTorch 2.0+). Adds ~30s warmup.",
+    )
+    dataset: str = Field(
+        default="tiny-imagenet",
+        description="Dataset to use: 'cifar10', 'tiny-imagenet', or 'imagenet'.",
+    )
+    data_dir: str = Field(
+        default="./data",
+        description="Root directory for dataset storage.",
     )
 
 

@@ -9,6 +9,7 @@ import torch
 import torch.nn as nn
 
 from src.config import cfg
+from src.ml.dataset import get_num_classes
 
 
 class SimpleCNN(nn.Module):
@@ -17,7 +18,8 @@ class SimpleCNN(nn.Module):
     Designed to easily interface with our hardware MAC module.
     """
 
-    def __init__(self, num_classes: int = cfg.ml.num_classes):
+    def __init__(self, num_classes: int = 0):
+        num_classes = num_classes or get_num_classes()
         super().__init__()
 
         # --- Block 1 - Hardware Target (Weight extraction layer for Amaranth) ---
