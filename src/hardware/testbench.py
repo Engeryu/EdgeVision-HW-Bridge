@@ -76,7 +76,11 @@ def get_quantized_test_data() -> tuple[torch.Tensor, torch.Tensor, int]:
         logger.info("  -> No checkpoint found, using random weights.")
     sw_weights = model.get_hardware_target_weights(filter_index=0).flatten()
 
+    _active_dataset = cfg.ml.dataset
+    cfg.ml.dataset = "cifar10"
     train_loader, _ = get_dataloaders()
+    cfg.ml.dataset = _active_dataset
+
     images, _ = next(iter(train_loader))
     sw_pixels = images[0, :, 0:3, 0:3].flatten()
 
