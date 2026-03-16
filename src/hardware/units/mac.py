@@ -1,8 +1,8 @@
 # ===========================================================
-#  File    : mac.py
+#  File    : units/mac.py
 #  Author  : engeryu
 #  Created : 2026-03-14
-#  Modified: 2026-03-15
+#  Modified: 2026-03-16
 # ===========================================================
 
 from amaranth import Elaboratable, Module, Signal, signed

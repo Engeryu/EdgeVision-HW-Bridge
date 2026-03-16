@@ -36,8 +36,11 @@ This project bridges the gap between **Data Science / AI** and **Digital ASIC/FP
     │   ├── model.py      # CNN Architecture & Hardware Target extraction
     │   └── train.py      # Training loop and evaluation
     └── hardware/         # Microelectronics Domain (Amaranth)
-        ├── mac.py        # Hardware MAC Unit design (Generates Verilog)
-        └── testbench.py  # Co-simulation and VCD waveform generation
+        ├── units/
+        │   └── mac.py        # MAC unit design (Generates Verilog)
+        ├── bus/              # Reserved for AXI4/AXI-Stream wrappers
+        └── testbenches/
+            └── tb_mac.py     # Co-simulation and VCD waveform generation
 ```
 
 ## 🛠️ Getting Started

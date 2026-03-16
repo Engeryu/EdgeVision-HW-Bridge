@@ -1,5 +1,5 @@
 # ===========================================================
-#  File    : testbench.py
+#  File    : testbenches/tb_mac.py
 #  Author  : engeryu
 #  Created : 2026-03-14
 #  Modified: 2026-03-16
@@ -12,7 +12,7 @@ import torch
 from amaranth.sim import Simulator
 
 from src.config import cfg
-from src.hardware.mac import MACUnit
+from src.hardware.units.mac import MACUnit
 from src.ml.dataset import get_dataloaders
 from src.ml.model import SimpleCNN
 

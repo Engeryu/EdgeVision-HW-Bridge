@@ -265,7 +265,7 @@ if [[ -f "./mac.v" ]]; then
     warn "mac.v already exists — regenerating."
 fi
 
-$PYTHON_RUN -m src.hardware.mac
+$PYTHON_RUN -m src.hardware.units.mac
 success "Verilog file 'mac.v' generated."
 
 # ═══════════════════════════════════════════════════════════
@@ -273,7 +273,7 @@ success "Verilog file 'mac.v' generated."
 # ═══════════════════════════════════════════════════════════
 section "STEP 4 — HW/SW Co-Simulation (Amaranth Testbench)"
 
-$PYTHON_RUN -m src.hardware.testbench
+$PYTHON_RUN -m src.hardware.testbench.tb_mac
 success "Co-simulation passed. Waveform saved as 'mac_simulation.vcd'."
 
 # ═══════════════════════════════════════════════════════════
