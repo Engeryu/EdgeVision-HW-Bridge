@@ -15,11 +15,10 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.amp import GradScaler, autocast
-
-form torch.optim import Adam, AdamW
+from torch.optim import Adam, AdamW
 from torch.optim.lr_scheduler import CosineAnnealingLR, ReduceLROnPlateau
 
-from src.config import cfg
+from src.config import DATASET_PRESETS, MLConfig, cfg
 from src.ml.dataset import get_dataloaders
 from src.ml.model import SimpleCNN, get_model
 
@@ -81,6 +80,33 @@ class Metrics:
         return self.loss / count if count else 0.0
 
 
+def apply_dataset_preset() -> None:
+    """
+    Applies recommended hyperparameter presets for the configured dataset.
+
+    Presets are applied only for fields that are still at their default
+    value, so any explicit override in cfg always takes precedence.
+    This allows full manual control while providing sensible defaults
+    per dataset out of the box.
+
+    Preset values per dataset:
+    - cifar10       : AdamW lr=3e-4, CosineAnnealing
+    - tiny-imagenet : AdamW lr=3e-4, ReduceLROnPlateau
+    - imagenet      : AdamW lr=1e-4, CosineAnnealing
+    """
+    preset = DATASET_PRESETS.get(cfg.ml.dataset)
+    if not preset:
+        return
+
+    defaults = MLConfig()
+    for field, value in preset.items():
+        if getattr(cfg.ml, field) == getattr(defaults, field):
+            setattr(cfg.ml, field, value)
+            logger.info(
+                f"Preset applied: {field} = {value} (dataset: {cfg.ml.dataset})"
+            )
+
+
 class Trainer:
     """
     Orchestrates the complete training pipeline for the CNN model.
@@ -96,6 +122,7 @@ class Trainer:
         self.save_dir.mkdir(parents=True, exist_ok=True)
 
         set_seed(cfg.ml.seed)
+        apply_dataset_preset()
 
         if torch.cuda.is_available():
             self.device = torch.device("cuda")

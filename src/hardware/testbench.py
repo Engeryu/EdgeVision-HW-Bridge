@@ -64,7 +64,7 @@ def get_quantized_test_data() -> tuple[torch.Tensor, torch.Tensor, int]:
     # The hardware MAC targets conv1 of SimpleCNN exclusively — ResNet variants
     # are production models and do not expose get_hardware_target_weights().
     model = SimpleCNN()
-    ckpt = Path("./checkpoints/{cfg.ml.dataset.replace('-', '_')}.pth")
+    ckpt = Path("./checkpoints/cifar10.pth")
     if ckpt.exists():
         checkpoint = torch.load(ckpt, map_location="cpu", weights_only=True)
         if isinstance(checkpoint, dict) and "model_state_dict" in checkpoint:
