@@ -116,7 +116,7 @@ case "$MANAGER" in
 
 uv)
     info "Syncing dependencies with uv..."
-    uv sync --quiet
+    uv sync
     PYTHON_RUN="uv run python"
     success "uv: $(uv --version) — dependencies up to date."
     ;;
