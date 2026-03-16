@@ -15,6 +15,8 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.amp import GradScaler, autocast
+
+form torch.optim import Adam, AdamW
 from torch.optim.lr_scheduler import CosineAnnealingLR, ReduceLROnPlateau
 
 from src.config import cfg
@@ -110,7 +112,21 @@ class Trainer:
             self.model = torch.compile(self.model)
 
         self.criterion = nn.CrossEntropyLoss()
-        self.optimizer = optim.Adam(self.model.parameters(), lr=cfg.ml.learning_rate)
+        if cfg.ml.optimizer == "adamw":
+            self.optimizer = AdamW(
+                self.model.parameters(),
+                lr=cfg.ml.learning_rate,
+                weight_decay=cfg.ml.weight_decay,
+            )
+        elif cfg.ml.optimizer == "adam":
+            self.optimizer = Adam(
+                self.model.parameters(),
+                lr=cfg.ml.learning_rate,
+            )
+        else:
+            raise ValueError(
+                f"Unknown optimizer '{cfg.ml.optimizer}'. Choose from: 'adam', 'adamw'."
+            )
 
         if cfg.ml.scheduler == "plateau":
             self.scheduler = ReduceLROnPlateau(self.optimizer, mode="min", patience=1)
@@ -233,9 +249,10 @@ class Trainer:
         logger.info(
             f"Configuration: {cfg.ml.epoch} epochs | Dataset: {cfg.ml.dataset} "
             f"| Model: {self.model.__class__.__name__} "
-            f"| Batch Size: {cfg.ml.batch_size} | LR: {cfg.ml.learning_rate} "
-            f"| Scheduler: {cfg.ml.scheduler} | AMP: {cfg.ml.mixed_precision} "
-            f"| Compile: {cfg.ml.compile_model}"
+            f"| Batch Size: {cfg.ml.batch_size} "
+            f"| Optimizer: {cfg.ml.optimizer} | LR: {cfg.ml.learning_rate} "
+            f"| WD: {cfg.ml.weight_decay} | Scheduler: {cfg.ml.scheduler} "
+            f"| AMP: {cfg.ml.mixed_precision} | Compile: {cfg.ml.compile_model}"
         )
 
         best_acc = 0.0

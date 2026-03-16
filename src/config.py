@@ -11,9 +11,14 @@ from pydantic import BaseModel, Field
 class MLConfig(BaseModel):
     """Machine Learning configuration (PyTorch)."""
 
-    batch_size: int = Field(default=64, description="Data Training Input batch size.")
-    epoch: int = Field(default=5, description="Number of iteration over dataset.")
-    learning_rate: float = Field(default=1e-3, description="Optimizer's Learning Rate.")
+    data_dir: str = Field(
+        default="./data",
+        description="Root directory for dataset storage.",
+    )
+    dataset: str = Field(
+        default="tiny-imagenet",
+        description="Dataset to use: 'cifar10', 'tiny-imagenet', or 'imagenet'.",
+    )
     num_classes: int = Field(
         default=0,
         description="Number of output classes. Set to 0 for auto-detection from dataset.",
@@ -22,13 +27,27 @@ class MLConfig(BaseModel):
         default="plateau",
         description="LR Scheduler type: 'cosine' (CosineAnnealingLR) or 'plateau' (ReduceLROnPlateau).",
     )
-    early_stopping_patience: int = Field(
-        default=3,
-        description="Epochs without improvement before stopping. Set to 0 to disable.",
-    )
     seed: int = Field(
         default=42,
         description="Global random seed for reproducibility across torch, numpy and python random.",
+    )
+    batch_size: int = Field(default=64, description="Data Training Input batch size.")
+    epoch: int = Field(default=5, description="Number of iteration over dataset.")
+    optimizer: str = Field(
+        default="adamw",
+        description="Optimizer type: 'adam' or 'adamw'.",
+    )
+    learning_rate: float = Field(
+        default=3e-4,
+        description="Optimizer's initial learning rate. Recommended: 3e-4 for AdamW, 1e-3 for Adam.",
+    )
+    weight_decay: float = Field(
+        default=1e-4,
+        description="L2 regularization factor for AdamW. Ignored when optimizer is 'adam'.",
+    )
+    early_stopping_patience: int = Field(
+        default=3,
+        description="Epochs without improvement before stopping. Set to 0 to disable.",
     )
     mixed_precision: bool = Field(
         default=True,
@@ -36,15 +55,7 @@ class MLConfig(BaseModel):
     )
     compile_model: bool = Field(
         default=False,
-        description="Enable torch.compile() for kernel-level optimizations (PyTorch 2.0+). Adds ~30s warmup.",
-    )
-    dataset: str = Field(
-        default="tiny-imagenet",
-        description="Dataset to use: 'cifar10', 'tiny-imagenet', or 'imagenet'.",
-    )
-    data_dir: str = Field(
-        default="./data",
-        description="Root directory for dataset storage.",
+        description="Enable torch.compile() for kernel-level optimizations (PyTorch 2.0+).",
     )
 
 
