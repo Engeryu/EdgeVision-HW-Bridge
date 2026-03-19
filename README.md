@@ -8,8 +8,8 @@ This project bridges the gap between **Data Science / AI** and **Digital ASIC/FP
 
 - **Hardware-Aware ML Architecture:** A custom lightweight CNN designed in PyTorch (`src.ml.model.SimpleCNN`) optimized for hardware deployment.
 - **Automated Training Pipeline:** Full training loop on CIFAR-10 with validation and model checkpointing (`src.ml.train`).
-- **Custom Hardware MAC Unit:** A cycle-accurate Multiply-Accumulate (MAC) unit described in Python using Amaranth HDL (`src.hardware.mac`), capable of exporting to Verilog.
-- **Exact Co-Simulation:** A robust testbench (`src.hardware.testbench`) that extracts weights and image patches, quantizes them to `int8`, simulates the hardware clock cycle by cycle, and mathematically asserts that the Amaranth hardware output perfectly matches the PyTorch software prediction.
+- **Custom Hardware MAC Unit:** A cycle-accurate Multiply-Accumulate (MAC) unit described in Python using Amaranth HDL (`src.hardware.units.mac`), capable of exporting to Verilog.
+- **Exact Co-Simulation:** A robust testbench (`src.hardware.testbenches.tb_mac`) that extracts weights and image patches, quantizes them to `int8`, simulates the hardware clock cycle by cycle, and mathematically asserts that the Amaranth hardware output perfectly matches the PyTorch software prediction.
 - **Modern Python Stack:** Managed entirely with `uv` for blazing-fast dependency resolution and `Pydantic` for strict configuration validation.
 
 ## 🧠 Technical Highlights
@@ -140,7 +140,8 @@ The active dataset is configured via `cfg.ml.dataset` in `src/config.py`. Three 
 | `tiny-imagenet` | 200     | 64×64      | Automatic (~236 MB) |
 | `imagenet`      | 1000    | 224×224    | Manual (see below)  |
 
-To trigger the download manually:
+> For dataset download only, `uv run python` is used directly as there is no dedicated CLI entry point.
+> e.g - To trigger the download manually:
 
 ```bash
 uv run python -c "from src.ml.dataset import get_dataloaders; get_dataloaders()"
