@@ -56,7 +56,6 @@ DIRS=(
     "./src/ml/__pycache__"
     "./src/hardware/units/__pycache__"
     "./src/hardware/testbenches/__pycache__"
-    "./src/hardware/bus/__init__.py"
     "./.pytest_cache"
 )
 
