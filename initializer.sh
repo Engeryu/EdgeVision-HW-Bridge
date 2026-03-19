@@ -3,7 +3,7 @@
 #  File    : initializer.sh
 #  Author  : engeryu
 #  Created : 2026-03-15
-#  Modified: 2026-03-16
+#  Modified: 2026-03-19
 # ===========================================================
 #  Full pipeline runner for the EdgeVision HW/SW Co-Design project.
 #  Executes each step sequentially with environment validation.
@@ -129,13 +129,14 @@ fi
 
 success "Package manager: ${MANAGER}"
 
-# ── Dependency sync & PYTHON_RUN setup ───────────────────
+# ── Dependency sync & PYTHON_RUN/PACKAGES_RUN setup ───────────────────
 case "$MANAGER" in
 
 uv)
     info "Syncing dependencies with uv..."
     uv sync
     PYTHON_RUN="uv run python"
+    PACKAGES_RUN="uv run"
     success "uv: $(uv --version) — dependencies up to date."
     ;;
 
@@ -147,6 +148,7 @@ poetry)
     poetry install --quiet
     PYTHON_RUN="poetry run python"
     success "poetry: $(poetry --version) — dependencies up to date."
+    PACKAGES_RUN="poetry run"
     ;;
 
 conda)
@@ -163,6 +165,7 @@ conda)
     fi
     PYTHON_RUN="conda run --no-capture-output -n ${CONDA_ENV_NAME} python"
     success "conda: $(conda --version) — env '${CONDA_ENV_NAME}' ready."
+    PACKAGES_RUN="conda run --no-capture-output -n ${CONDA_ENV_NAME}"
     ;;
 
 pip)
@@ -180,6 +183,7 @@ pip)
     "${VENV_DIR}/bin/pip" install -r requirements.txt --quiet
     PYTHON_RUN="${VENV_DIR}/bin/python"
     success "pip: $("${VENV_DIR}/bin/pip" --version) — dependencies up to date."
+    PACKAGES_RUN="${VENV_DIR}/bin"
     ;;
 esac
 
@@ -246,12 +250,12 @@ else
             info "Keeping existing checkpoint."
         else
             info "Starting training..."
-            $PYTHON_RUN -m src.ml.train
+            $PACKAGES_RUN edgevision-train
             success "Training complete. Checkpoint saved."
         fi
     else
         info "No checkpoint found. Starting training..."
-        $PYTHON_RUN -m src.ml.train
+        $PACKAGES_RUN edgevision-train
         success "Training complete. Checkpoint saved."
     fi
 fi
@@ -265,7 +269,7 @@ if [[ -f "./mac.v" ]]; then
     warn "mac.v already exists — regenerating."
 fi
 
-$PYTHON_RUN -m src.hardware.units.mac
+$PACKAGES_RUN edgevision-rtl
 success "Verilog file 'mac.v' generated."
 
 # ═══════════════════════════════════════════════════════════
@@ -273,8 +277,16 @@ success "Verilog file 'mac.v' generated."
 # ═══════════════════════════════════════════════════════════
 section "STEP 4 — HW/SW Co-Simulation (Amaranth Testbench)"
 
-$PYTHON_RUN -m src.hardware.testbench.tb_mac
+$PACKAGES_RUN edgevision-sim
 success "Co-simulation passed. Waveform saved as 'mac_simulation.vcd'."
+
+# ═══════════════════════════════════════════════════════════
+# STEP 5 — Data/VRAM Purge
+# ═══════════════════════════════════════════════════════════
+section "STEP 5 — Data/VRAM Purge"
+
+$PACKAGES_RUN edgevision-purge
+success "Memory purge passed. Freed memory from Graphic Card."
 
 # ═══════════════════════════════════════════════════════════
 # Summary

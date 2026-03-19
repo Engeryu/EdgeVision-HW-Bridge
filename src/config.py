@@ -26,7 +26,7 @@ class MLConfig(BaseModel):
     scheduler: str = Field(
         default="plateau",
         description=(
-            "LR Scheduler type: 'cosine' (CosineAnnealingLR) " "or 'plateau' (ReduceLROnPlateau)."
+            "LR Scheduler type: 'cosine' (CosineAnnealingLR) or 'plateau' (ReduceLROnPlateau)."
         ),
     )
     seed: int = Field(
@@ -42,7 +42,7 @@ class MLConfig(BaseModel):
     learning_rate: float = Field(
         default=3e-4,
         description=(
-            "Optimizer's initial learning rate. " "Recommended: 3e-4 for AdamW, 1e-3 for Adam."
+            "Optimizer's initial learning rate. Recommended: 3e-4 for AdamW, 1e-3 for Adam."
         ),
     )
     weight_decay: float = Field(

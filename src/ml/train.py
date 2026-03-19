@@ -2,13 +2,14 @@
 #  File    : train.py
 #  Author  : engeryu
 #  Created : 2026-03-14
-#  Modified: 2026-03-16
+#  Modified: 2026-03-19
 # ===========================================================
 
 import logging
 import random
 from dataclasses import dataclass
 from pathlib import Path
+from typing import cast
 
 import numpy as np
 import torch
@@ -129,13 +130,14 @@ class Trainer:
             self.device = torch.device("cpu")
 
         self.train_loader, self.test_loader = get_dataloaders()
-        self.model = get_model().to(self.device)
+        self.model: nn.Module = get_model().to(self.device)
 
         if cfg.ml.compile_model:
             logger.info("Compiling model with torch.compile()...")
-            self.model = torch.compile(self.model)
+            self.model = cast(nn.Module, torch.compile(self.model))  # Type: ignore[assignment]
 
         self.criterion = nn.CrossEntropyLoss()
+        self.optimizer: AdamW | Adam
         if cfg.ml.optimizer == "adamw":
             self.optimizer = AdamW(
                 self.model.parameters(),
@@ -152,6 +154,7 @@ class Trainer:
                 f"Unknown optimizer '{cfg.ml.optimizer}'. Choose from: 'adam', 'adamw'."
             )
 
+        self.scheduler: ReduceLROnPlateau | CosineAnnealingLR
         if cfg.ml.scheduler == "plateau":
             self.scheduler = ReduceLROnPlateau(self.optimizer, mode="min", patience=1)
         else:
@@ -309,5 +312,10 @@ class Trainer:
         logger.info(f"Best Test Acc: {best_acc:.2f}%")
 
 
-if __name__ == "__main__":
+def main() -> None:
+    """CLI entry point for the training pipeline."""
     Trainer().run()
+
+
+if __name__ == "__main__":
+    main()

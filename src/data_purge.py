@@ -1,5 +1,5 @@
 # ===========================================================
-#  File    : purge.py
+#  File    : data-purge.py
 #  Author  : engeryu
 #  Created : 2026-03-15
 # ===========================================================
@@ -65,5 +65,9 @@ def purge_memory() -> None:
     print("\n✔  Purge complete.")
 
 
-if __name__ == "__main__":
+def main():
     purge_memory()
+
+
+if __name__ == "__main__":
+    main()

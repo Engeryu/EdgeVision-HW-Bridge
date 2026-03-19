@@ -54,7 +54,9 @@ DIRS=(
     "./__pycache__"
     "./src/__pycache__"
     "./src/ml/__pycache__"
-    "./src/hardware/__pycache__"
+    "./src/hardware/units/__pycache__"
+    "./src/hardware/testbenches/__pycache__"
+    "./src/hardware/bus/__init__.py"
     "./.pytest_cache"
 )
 
@@ -63,6 +65,7 @@ FILES=(
     "./mac.v"
     "./mac_simulation.vcd"
     "./mac_simulation_alt.vcd"
+    "./src/hardware/bus/__init__.py"
 )
 
 # ── Preview ───────────────────────────────────────────────

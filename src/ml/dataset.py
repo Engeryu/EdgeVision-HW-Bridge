@@ -2,7 +2,7 @@
 #  File    : dataset.py
 #  Author  : engeryu
 #  Created : 2026-03-14
-#  Modified: 2026-03-16
+#  Modified: 2026-03-19
 # ===========================================================
 
 import logging
@@ -221,7 +221,7 @@ def get_num_classes() -> int:
     return NUM_CLASSES.get(cfg.ml.dataset, 10)
 
 
-def get_dataloaders(data_dir: str = None) -> tuple[DataLoader, DataLoader]:
+def get_dataloaders(data_dir: str | None = None) -> tuple[DataLoader, DataLoader]:
     """
     Factory function that returns DataLoaders for the configured dataset.
 
@@ -253,7 +253,7 @@ def get_dataloaders(data_dir: str = None) -> tuple[DataLoader, DataLoader]:
         train, test = _get_imagenet(root)
     else:
         raise ValueError(
-            f"Unknown dataset '{dataset}'. " "Choose from: 'cifar10', 'tiny-imagenet', 'imagenet'."
+            f"Unknown dataset '{dataset}'. Choose from: 'cifar10', 'tiny-imagenet', 'imagenet'."
         )
 
     train_loader = DataLoader(
