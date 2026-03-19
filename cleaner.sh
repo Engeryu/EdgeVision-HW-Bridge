@@ -63,7 +63,6 @@ DIRS=(
 FILES=(
     "./mac.v"
     "./mac_simulation.vcd"
-    "./src/hardware/bus/__init__.py"
 )
 
 # ── Preview ───────────────────────────────────────────────
