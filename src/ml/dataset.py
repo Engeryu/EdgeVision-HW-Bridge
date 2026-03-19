@@ -10,7 +10,6 @@ import shutil
 import zipfile
 from pathlib import Path
 
-import torch
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 
@@ -69,12 +68,8 @@ def _get_cifar10(data_dir: Path) -> tuple:
         ]
     )
 
-    train = datasets.CIFAR10(
-        root=data_dir, train=True, download=True, transform=transform_train
-    )
-    test = datasets.CIFAR10(
-        root=data_dir, train=False, download=True, transform=transform_test
-    )
+    train = datasets.CIFAR10(root=data_dir, train=True, download=True, transform=transform_train)
+    test = datasets.CIFAR10(root=data_dir, train=False, download=True, transform=transform_test)
     return train, test
 
 
@@ -144,9 +139,7 @@ def _get_tiny_imagenet(data_dir: Path) -> tuple:
         ]
     )
 
-    train = datasets.ImageFolder(
-        root=str(tiny_dir / "train"), transform=transform_train
-    )
+    train = datasets.ImageFolder(root=str(tiny_dir / "train"), transform=transform_train)
     test = datasets.ImageFolder(root=str(val_dir), transform=transform_test)
     return train, test
 
@@ -260,8 +253,7 @@ def get_dataloaders(data_dir: str = None) -> tuple[DataLoader, DataLoader]:
         train, test = _get_imagenet(root)
     else:
         raise ValueError(
-            f"Unknown dataset '{dataset}'. "
-            "Choose from: 'cifar10', 'tiny-imagenet', 'imagenet'."
+            f"Unknown dataset '{dataset}'. " "Choose from: 'cifar10', 'tiny-imagenet', 'imagenet'."
         )
 
     train_loader = DataLoader(

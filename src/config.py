@@ -2,7 +2,7 @@
 #  File    : config.py
 #  Author  : engeryu
 #  Created : 2026-03-14
-#  Modified: 2026-03-16
+#  Modified: 2026-03-19
 # ===========================================================
 
 from pydantic import BaseModel, Field
@@ -25,7 +25,9 @@ class MLConfig(BaseModel):
     )
     scheduler: str = Field(
         default="plateau",
-        description="LR Scheduler type: 'cosine' (CosineAnnealingLR) or 'plateau' (ReduceLROnPlateau).",
+        description=(
+            "LR Scheduler type: 'cosine' (CosineAnnealingLR) " "or 'plateau' (ReduceLROnPlateau)."
+        ),
     )
     seed: int = Field(
         default=42,
@@ -39,7 +41,9 @@ class MLConfig(BaseModel):
     )
     learning_rate: float = Field(
         default=3e-4,
-        description="Optimizer's initial learning rate. Recommended: 3e-4 for AdamW, 1e-3 for Adam.",
+        description=(
+            "Optimizer's initial learning rate. " "Recommended: 3e-4 for AdamW, 1e-3 for Adam."
+        ),
     )
     weight_decay: float = Field(
         default=1e-4,

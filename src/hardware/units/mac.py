@@ -49,9 +49,7 @@ class MACUnit(Elaboratable):
         with m.If(self.clear):
             m.d.sync += self.result_out.eq(0)
         with m.Else():
-            m.d.sync += self.result_out.eq(
-                self.result_out + (self.pixel_in * self.weight_in)
-            )
+            m.d.sync += self.result_out.eq(self.result_out + (self.pixel_in * self.weight_in))
 
         return m
 
@@ -62,9 +60,7 @@ if __name__ == "__main__":
     mac = MACUnit()
     with open("mac.v", "w") as f:
         f.write(
-            verilog.convert(
-                mac, ports=[mac.pixel_in, mac.weight_in, mac.clear, mac.result_out]
-            )
+            verilog.convert(mac, ports=[mac.pixel_in, mac.weight_in, mac.clear, mac.result_out])
         )
 
     print("The Verilog file 'mac.v' was successfully generated!")

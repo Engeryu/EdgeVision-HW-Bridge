@@ -1,0 +1,14 @@
+# ===========================================================
+#  File    : .pre-commit-config.yaml
+#  Author  : engeryu
+#  Created : 2026-03-18
+#  Modified: 2026-03-18
+# ===========================================================
+
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.3.4
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
