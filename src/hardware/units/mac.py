@@ -2,7 +2,7 @@
 #  File    : units/mac.py
 #  Author  : engeryu
 #  Created : 2026-03-14
-#  Modified: 2026-03-16
+#  Modified: 2026-03-19
 # ===========================================================
 
 from amaranth import Elaboratable, Module, Signal, signed
@@ -54,7 +54,7 @@ class MACUnit(Elaboratable):
         return m
 
 
-if __name__ == "__main__":
+def main():
     from amaranth.back import verilog
 
     mac = MACUnit()
@@ -64,3 +64,7 @@ if __name__ == "__main__":
         )
 
     print("The Verilog file 'mac.v' was successfully generated!")
+
+
+if __name__ == "__main__":
+    main()

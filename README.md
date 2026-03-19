@@ -157,7 +157,7 @@ _(Note: Running the training or testbench scripts will also trigger the download
 To train the CNN on CIFAR-10 and generate the model weights inside the `./checkpoints` directory:
 
 ```bash
-uv run python -m src.ml.train
+uv run edgevision-train
 ```
 
 > Replace `uv run python` with your manager's equivalent (see substitution table above).
@@ -185,7 +185,7 @@ Hyperparameters (optimizer, LR, scheduler) are automatically preset per dataset.
 Before running the simulation, you can export the Amaranth hardware design into standard Verilog RTL. This proves the design is synthesizable for real FPGAs and ASICs:
 
 ```bash
-uv run python -m src.hardware.mac
+uv run edgevision-rtl
 ```
 
 > Replace `uv run python` with your manager's equivalent (see substitution table above).
@@ -197,7 +197,7 @@ This will generate a `mac.v` file in the root directory.
 To extract the data, quantize it to `int8`, run the hardware simulation, and mathematically compare the Amaranth signals with the PyTorch tensors:
 
 ```bash
-uv run python -m src.hardware.testbench
+uv run edgevision-sim
 ```
 
 > Replace `uv run python` with your manager's equivalent (see substitution table above).
@@ -249,10 +249,10 @@ To remove all runtime-generated files and directories (`data/`, `checkpoints/`, 
 After training or co-simulation, PyTorch may hold onto GPU memory. To release it without restarting your Python process:
 
 ```bash
-uv run python data_purge.py
+uv run edgevision-purge
 ```
 
-> Replace `uv run python` with your manager's equivalent (see substitution table above).
+> Replace `uv run ` with your manager's equivalent (see substitution table above).
 
 This runs Python's garbage collector, empties the CUDA/ROCm cache, resets memory statistics, and attempts to return fragmented RAM to the OS (Linux only via `malloc_trim`).
 

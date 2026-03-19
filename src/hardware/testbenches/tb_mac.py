@@ -2,7 +2,7 @@
 #  File    : testbenches/tb_mac.py
 #  Author  : engeryu
 #  Created : 2026-03-14
-#  Modified: 2026-03-16
+#  Modified: 2026-03-19
 # ===========================================================
 
 import logging
@@ -152,5 +152,9 @@ def run_hardware_software_cosimulation() -> None:
     print("Waveform file generated: 'mac_simulation.vcd'")
 
 
-if __name__ == "__main__":
+def main():
     run_hardware_software_cosimulation()
+
+
+if __name__ == "__main__":
+    main()
