@@ -2,7 +2,7 @@
 #  File    : train.py
 #  Author  : engeryu
 #  Created : 2026-03-14
-#  Modified: 2026-03-24
+#  Modified: 2026-03-25
 # ===========================================================
 
 import logging
@@ -99,6 +99,11 @@ def apply_dataset_preset() -> None:
     - cifar10       : AdamW lr=3e-4, CosineAnnealing
     - tiny-imagenet : AdamW lr=3e-4, ReduceLROnPlateau
     - imagenet      : AdamW lr=1e-4, CosineAnnealing
+
+    Known limitation: if the user manually sets a value identical to the
+    preset default, apply_dataset_preset() will still log "Preset applied"
+    even though the value was intentionally set. A proper solution would
+    require tracking which fields were explicitly set by the user.
     """
     preset = DATASET_PRESETS.get(cfg.ml.dataset)
     if not preset:
@@ -108,7 +113,9 @@ def apply_dataset_preset() -> None:
     for field, value in preset.items():
         if getattr(cfg.ml, field) == getattr(defaults, field):
             setattr(cfg.ml, field, value)
-            logger.info(f"Preset applied: {field} = {value} (dataset: {cfg.ml.dataset})")
+            logger.info(
+                f"Preset applied: {field} = {value} (dataset: {cfg.ml.dataset})"
+            )
 
 
 class Trainer:
@@ -121,7 +128,7 @@ class Trainer:
     checkpoints. All behavior is driven by the global cfg instance.
     """
 
-    def __init__(self, save_dir: str = "./checkpoints"):
+    def __init__(self, save_dir: str | Path = "./checkpoints"):
         self.save_dir = Path(save_dir)
         self.save_dir.mkdir(parents=True, exist_ok=True)
 
@@ -166,7 +173,9 @@ class Trainer:
         else:
             self.scheduler = CosineAnnealingLR(self.optimizer, T_max=cfg.ml.epoch)
 
-        self.scaler = GradScaler(enabled=cfg.ml.mixed_precision and self.device.type == "cuda")
+        self.scaler = GradScaler(
+            enabled=cfg.ml.mixed_precision and self.device.type == "cuda"
+        )
 
     def train_one_epoch(self) -> None:
         """
@@ -260,7 +269,9 @@ class Trainer:
             },
             save_path,
         )
-        logger.info(f"Checkpoint saved: {save_path} (epoch={epoch}, acc={best_acc:.2f}%)")
+        logger.info(
+            f"Checkpoint saved: {save_path} (epoch={epoch}, acc={best_acc:.2f}%)"
+        )
         logger.info("The model is ready to be transferred to Hardware!")
 
     def run(self) -> None:
@@ -313,7 +324,9 @@ class Trainer:
                 self.save(epoch, best_acc)
             else:
                 patience_counter += 1
-                logger.info(f"No improvement for {patience_counter}/{patience} epoch(s).")
+                logger.info(
+                    f"No improvement for {patience_counter}/{patience} epoch(s)."
+                )
 
             if patience > 0 and patience_counter >= patience:
                 logger.info(f"Early stopping triggered after {epoch} epochs.")

@@ -2,7 +2,7 @@
 #  File    : dataset.py
 #  Author  : engeryu
 #  Created : 2026-03-14
-#  Modified: 2026-03-24
+#  Modified: 2026-03-25
 # ===========================================================
 
 import logging
@@ -93,7 +93,7 @@ def _get_tiny_imagenet(data_dir: Path) -> tuple:
 
     tiny_dir = data_dir / "tiny-imagenet-200"
     zip_path = data_dir / "tiny-imagenet-200.zip"
-    url = "http://cs231n.stanford.edu/tiny-imagenet-200.zip"
+    url = "https://cs231n.stanford.edu/tiny-imagenet-200.zip"
 
     if not tiny_dir.exists():
         if not zip_path.exists():
@@ -291,14 +291,14 @@ def get_dataloaders(
         train,
         batch_size=cfg.ml.batch_size,
         shuffle=True,
-        num_workers=2,
+        num_workers=min(2, os.cpu_count() or 1),
         pin_memory=True,
     )
     test_loader = DataLoader(
         test,
         batch_size=cfg.ml.batch_size,
         shuffle=False,
-        num_workers=2,
+        num_workers=min(2, os.cpu_count() or 1),
         pin_memory=True,
     )
 

@@ -2,7 +2,7 @@
 #  File    : model.py
 #  Author  : engeryu
 #  Created : 2026-03-14
-#  Modified: 2026-03-24
+#  Modified: 2026-03-25
 # ===========================================================
 
 import torch
@@ -142,21 +142,20 @@ def get_model(num_classes: int = 0) -> nn.Module:
     if cfg.ml.dataset == "cifar10":
         return SimpleCNN(num_classes=n)
 
-    elif cfg.ml.dataset == "tiny-imagenet":
+    if cfg.ml.dataset == "tiny-imagenet":
         # ResNet-18 trained from scratch — no pretrained weights for Tiny-ImageNet
         model = resnet18(weights=None)
         model.fc = nn.Linear(model.fc.in_features, n)
         return model
 
-    elif cfg.ml.dataset == "imagenet":
+    if cfg.ml.dataset == "imagenet":
         # ResNet-50 with default ImageNet weights for fine-tuning or full training
         model = resnet50(weights=ResNet50_Weights.DEFAULT)
         if n != 1000:
             model.fc = nn.Linear(model.fc.in_features, n)
         return model
 
-    else:
-        raise ValueError(
-            f"No model registered for dataset '{cfg.ml.dataset}'. "
-            "Choose from: 'cifar10', 'tiny-imagenet', 'imagenet'."
-        )
+    raise ValueError(
+        f"No model registered for dataset '{cfg.ml.dataset}'. "
+        "Choose from: 'cifar10', 'tiny-imagenet', 'imagenet'."
+    )

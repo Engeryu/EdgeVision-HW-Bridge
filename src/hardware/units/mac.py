@@ -2,10 +2,10 @@
 #  File    : units/mac.py
 #  Author  : engeryu
 #  Created : 2026-03-14
-#  Modified: 2026-03-24
+#  Modified: 2026-03-25
 # ===========================================================
 
-from amaranth import Elaboratable, Module, Signal, signed
+from amaranth import Elaboratable, Module, Platform, Signal, signed
 
 from src.config import cfg
 
@@ -29,7 +29,7 @@ class MACUnit(Elaboratable):
         # ~435k → 19 bits needed, *3 gives safe 24-bit margin
         self.result_out = Signal(signed(bit_width * 3), name="result_out")
 
-    def elaborate(self, platform) -> Module:
+    def elaborate(self, platform | None) -> Module:
         """
         Physical description of the component's internal synchronous logic.
 

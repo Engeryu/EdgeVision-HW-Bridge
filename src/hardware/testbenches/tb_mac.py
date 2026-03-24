@@ -2,14 +2,14 @@
 #  File    : testbenches/tb_mac.py
 #  Author  : engeryu
 #  Created : 2026-03-14
-#  Modified: 2026-03-24
+#  Modified: 2026-03-25
 # ===========================================================
 
 import logging
 from pathlib import Path
 
 import torch
-from amaranth.sim import Simulator
+from amaranth.sim import Simulator, SimulatorContext
 
 from src.config import cfg
 from src.hardware.units.mac import MACUnit
@@ -74,6 +74,7 @@ def get_quantized_test_data() -> tuple[torch.Tensor, torch.Tensor, int]:
         logger.info("  -> Loaded trained weights from checkpoint.")
     else:
         logger.info("  -> No checkpoint found, using random weights.")
+    model.eval()
     sw_weights = model.get_hardware_target_weights(filter_index=0).flatten()
 
     train_loader, _ = get_dataloaders(dataset_override="cifar10")
@@ -118,7 +119,7 @@ def run_hardware_software_cosimulation() -> None:
     sim.add_clock(1e-6)
 
     # Note: Amaranth requires the testbench process to be an async closure
-    async def testbench_process(ctx):
+    async def testbench_process(ctx: SimulatorContext) -> None:
         """Asynchronous closure driving the cycle-accurate simulation."""
         # Reset the accumulator
         ctx.set(mac.clear, 1)
