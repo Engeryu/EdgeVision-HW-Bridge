@@ -2,7 +2,7 @@
 #  File    : dataset.py
 #  Author  : engeryu
 #  Created : 2026-03-14
-#  Modified: 2026-03-19
+#  Modified: 2026-03-24
 # ===========================================================
 
 import logging
@@ -18,6 +18,10 @@ from src.config import cfg
 logger = logging.getLogger(__name__)
 
 # ── Normalization statistics per dataset ──────────────────
+# These datasets are well known, so finding official normalizations is easy.
+# For custom datasets, compute per-channel statistics with a loop over the DataLoader:
+# For mean → sum(x) / n_pixels  (per channel: R, G, B)
+# For std  → sqrt(sum((x - mean)²) / n_pixels)  (per channel: R, G, B)
 STATS = {
     "cifar10": {
         "mean": (0.4914, 0.4822, 0.4465),
@@ -68,8 +72,12 @@ def _get_cifar10(data_dir: Path) -> tuple:
         ]
     )
 
-    train = datasets.CIFAR10(root=data_dir, train=True, download=True, transform=transform_train)
-    test = datasets.CIFAR10(root=data_dir, train=False, download=True, transform=transform_test)
+    train = datasets.CIFAR10(
+        root=data_dir, train=True, download=True, transform=transform_train
+    )
+    test = datasets.CIFAR10(
+        root=data_dir, train=False, download=True, transform=transform_test
+    )
     return train, test
 
 
@@ -103,21 +111,35 @@ def _get_tiny_imagenet(data_dir: Path) -> tuple:
     val_annotations = val_dir / "val_annotations.txt"
 
     if val_images_dir.exists():
-        logger.info("Restructuring Tiny-ImageNet val split...")
-        with open(val_annotations) as f:
-            for line in f:
-                parts = line.strip().split("\t")
-                img_file = parts[0]
-                class_id = parts[1]
-                class_dir = val_dir / class_id
-                class_dir.mkdir(exist_ok=True)
-                src = val_images_dir / img_file
-                dst = class_dir / img_file
-                if src.exists():
-                    shutil.move(str(src), str(dst))
-        shutil.rmtree(str(val_images_dir))
-        val_annotations.unlink()
-        logger.info("Val split restructured.")
+        if val_annotations.exists():
+            with open(val_annotations) as f:
+                expected_count = sum(1 for _ in f)
+        else:
+            expected_count = 0
+        moved_count = sum(
+            len(list(d.iterdir()))
+            for d in val_dir.iterdir()
+            if d.is_dir() and d.name != "images"
+        )
+
+        if moved_count < expected_count:
+            logger.info("Restructuring Tiny-ImageNet val split...")
+            with open(val_annotations) as f:
+                for line in f:
+                    parts = line.strip().split("\t")
+                    img_file = parts[0]
+                    class_id = parts[1]
+                    class_dir = val_dir / class_id
+                    class_dir.mkdir(exist_ok=True)
+                    src = val_images_dir / img_file
+                    dst = class_dir / img_file
+                    if src.exists():
+                        shutil.move(str(src), str(dst))
+            shutil.rmtree(str(val_images_dir))
+            val_annotations.unlink()
+            logger.info("Val split restructured.")
+        else:
+            logger.info("Val split already restructured — skipping.")
 
     stats = STATS["tiny-imagenet"]
     size = CROP_SIZE["tiny-imagenet"]
@@ -126,6 +148,8 @@ def _get_tiny_imagenet(data_dir: Path) -> tuple:
         [
             transforms.RandomCrop(size, padding=8),
             transforms.RandomHorizontalFlip(),
+            transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2),
+            transforms.RandomRotation(15),
             transforms.ToTensor(),
             transforms.Normalize(stats["mean"], stats["std"]),
         ]
@@ -139,7 +163,9 @@ def _get_tiny_imagenet(data_dir: Path) -> tuple:
         ]
     )
 
-    train = datasets.ImageFolder(root=str(tiny_dir / "train"), transform=transform_train)
+    train = datasets.ImageFolder(
+        root=str(tiny_dir / "train"), transform=transform_train
+    )
     test = datasets.ImageFolder(root=str(val_dir), transform=transform_test)
     return train, test
 
@@ -221,7 +247,9 @@ def get_num_classes() -> int:
     return NUM_CLASSES.get(cfg.ml.dataset, 10)
 
 
-def get_dataloaders(data_dir: str | None = None) -> tuple[DataLoader, DataLoader]:
+def get_dataloaders(
+    data_dir: str | None = None, dataset_override: str | None = None
+) -> tuple[DataLoader, DataLoader]:
     """
     Factory function that returns DataLoaders for the configured dataset.
 
@@ -231,6 +259,9 @@ def get_dataloaders(data_dir: str | None = None) -> tuple[DataLoader, DataLoader
     Args:
         data_dir (str, optional): Override for the data directory.
                                   Defaults to cfg.ml.data_dir.
+        dataset_override (str, optional): Force a specific dataset regardless
+                                          of cfg.ml.dataset. Used by the testbench
+                                          to load CIFAR-10 without mutating global cfg.
 
     Returns:
         tuple[DataLoader, DataLoader]: (train_loader, test_loader)
@@ -242,7 +273,7 @@ def get_dataloaders(data_dir: str | None = None) -> tuple[DataLoader, DataLoader
     root = Path(data_dir or cfg.ml.data_dir)
     root.mkdir(parents=True, exist_ok=True)
 
-    dataset = cfg.ml.dataset
+    dataset = dataset_override or cfg.ml.dataset
     logger.info(f"Loading dataset: {dataset} from {root}")
 
     if dataset == "cifar10":

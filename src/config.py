@@ -2,10 +2,12 @@
 #  File    : config.py
 #  Author  : engeryu
 #  Created : 2026-03-14
-#  Modified: 2026-03-19
+#  Modified: 2026-03-24
 # ===========================================================
 
-from pydantic import BaseModel, Field
+from typing import Literal
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class MLConfig(BaseModel):
@@ -15,15 +17,15 @@ class MLConfig(BaseModel):
         default="./data",
         description="Root directory for dataset storage.",
     )
-    dataset: str = Field(
-        default="tiny-imagenet",
+    dataset: Literal["cifar10", "tiny-imagenet", "imagenet"] = Field(
+        default="cifar10",
         description="Dataset to use: 'cifar10', 'tiny-imagenet', or 'imagenet'.",
     )
     num_classes: int = Field(
         default=0,
         description="Number of output classes. Set to 0 for auto-detection from dataset.",
     )
-    scheduler: str = Field(
+    scheduler: Literal["cosine", "plateau"] = Field(
         default="plateau",
         description=(
             "LR Scheduler type: 'cosine' (CosineAnnealingLR) or 'plateau' (ReduceLROnPlateau)."
@@ -35,7 +37,7 @@ class MLConfig(BaseModel):
     )
     batch_size: int = Field(default=64, description="Data Training Input batch size.")
     epoch: int = Field(default=5, description="Number of iteration over dataset.")
-    optimizer: str = Field(
+    optimizer: Literal["adam", "adamw"] = Field(
         default="adamw",
         description="Optimizer type: 'adam' or 'adamw'.",
     )
@@ -70,7 +72,13 @@ class HardwareConfig(BaseModel):
 
 
 class ProjectConfig(BaseModel):
-    """Unified configuration for ML & Hardware."""
+    """Unified configuration for ML & Hardware.
+    Mutable by design - required for apply_dataset_preset() in train.py.
+    This is a global singleton: Safe for single-process use.
+    However it would require dependency injection in multi-threaded contexts.
+    """
+
+    model_config = ConfigDict(frozen=False)
 
     ml: MLConfig = Field(default_factory=MLConfig)
     hw: HardwareConfig = Field(default_factory=HardwareConfig)

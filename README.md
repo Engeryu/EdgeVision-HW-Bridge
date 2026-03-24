@@ -47,7 +47,7 @@ This project bridges the gap between **Data Science / AI** and **Digital ASIC/FP
 
 ### 1. Prerequisites
 
-This project requires **Python ≥ 3.13**, as i use a GTX 1070 max-q (latest cuda not supported), however, the project is fully compatible with **Python 3.14**.
+This project requires **Python ≥ 3.13**, as I use a GTX 1070 Max-Q (latest cuda not supported), however, the project is fully compatible with **Python 3.14**.
 Ensure you have at least one of the following package managers installed:
 
 | Tool                 | Install                                                         |

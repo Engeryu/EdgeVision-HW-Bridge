@@ -2,7 +2,7 @@
 #  File    : train.py
 #  Author  : engeryu
 #  Created : 2026-03-14
-#  Modified: 2026-03-19
+#  Modified: 2026-03-24
 # ===========================================================
 
 import logging
@@ -46,6 +46,9 @@ def set_seed(seed: int) -> None:
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
     torch.backends.cudnn.deterministic = True
+    # benchmark=False: disables cuDNN auto-tuner which selects fastest conv
+    # algorithms per input size. Disabled here because auto-tuner introduces
+    # non-determinism that would break reproducibility guarantees.
     torch.backends.cudnn.benchmark = False
     logger.info(f"Global seed set to {seed}.")
 
@@ -75,9 +78,12 @@ class Metrics:
         return 100.0 * self.correct / self.total if self.total else 0.0
 
     def avg_loss(self) -> float:
-        """Returns the mean loss per batch over the current accumulation window."""
-        count = self.total / (cfg.ml.batch_size or 1)
-        return self.loss / count if count else 0.0
+        """Returns the mean loss per batch over the current accumulation window.
+        Uses total // batch_size to count batches, clamped to 1 to avoid
+        division by zero on the last (potentially smaller) batch.
+        """
+        n_batches = max(self.total // (cfg.ml.batch_size or 1), 1)
+        return self.loss / n_batches if n_batches else 0.0
 
 
 def apply_dataset_preset() -> None:
@@ -134,7 +140,7 @@ class Trainer:
 
         if cfg.ml.compile_model:
             logger.info("Compiling model with torch.compile()...")
-            self.model = cast(nn.Module, torch.compile(self.model))  # Type: ignore[assignment]
+            self.model = cast(nn.Module, torch.compile(self.model))  # type: ignore[assignment]
 
         self.criterion = nn.CrossEntropyLoss()
         self.optimizer: AdamW | Adam
@@ -267,6 +273,10 @@ class Trainer:
         consecutive epochs, training is halted. The best checkpoint is saved
         whenever a new accuracy peak is reached. Set early_stopping_patience
         to 0 in cfg to disable early stopping entirely.
+
+        Early stopping monitors val_acc (not val_loss) because accuracy directly
+        reflects classification performance - val_loss can decrease while accuracy
+        plateaus due to overconfident predictions on already-correct samples.
         """
         logger.info(f"Starting training on: {self.device.type.upper()}")
         logger.info(

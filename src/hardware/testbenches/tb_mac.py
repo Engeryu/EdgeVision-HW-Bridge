@@ -2,7 +2,7 @@
 #  File    : testbenches/tb_mac.py
 #  Author  : engeryu
 #  Created : 2026-03-14
-#  Modified: 2026-03-19
+#  Modified: 2026-03-24
 # ===========================================================
 
 import logging
@@ -76,10 +76,7 @@ def get_quantized_test_data() -> tuple[torch.Tensor, torch.Tensor, int]:
         logger.info("  -> No checkpoint found, using random weights.")
     sw_weights = model.get_hardware_target_weights(filter_index=0).flatten()
 
-    _active_dataset = cfg.ml.dataset
-    cfg.ml.dataset = "cifar10"
-    train_loader, _ = get_dataloaders()
-    cfg.ml.dataset = _active_dataset
+    train_loader, _ = get_dataloaders(dataset_override="cifar10")
 
     images, _ = next(iter(train_loader))
     sw_pixels = images[0, :, 0:3, 0:3].flatten()
@@ -130,9 +127,9 @@ def run_hardware_software_cosimulation() -> None:
 
         print("  -> Injecting data into the chip (Cycle by cycle)...")
         # Feed pixels and weights sequentially
-        for count in range(len(hw_pixels)):
-            ctx.set(mac.pixel_in, int(hw_pixels[count].item()))
-            ctx.set(mac.weight_in, int(hw_weights[count].item()))
+        for pixel, weight in zip(hw_pixels, hw_weights, strict=True):
+            ctx.set(mac.pixel_in, int(pixel.item()))
+            ctx.set(mac.weight_in, int(weight.item()))
             await ctx.tick()
 
         # Retrieve the final computed result
@@ -152,7 +149,7 @@ def run_hardware_software_cosimulation() -> None:
     print("Waveform file generated: 'mac_simulation.vcd'")
 
 
-def main():
+def main() -> None:
     run_hardware_software_cosimulation()
 
 

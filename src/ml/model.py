@@ -2,7 +2,7 @@
 #  File    : model.py
 #  Author  : engeryu
 #  Created : 2026-03-14
-#  Modified: 2026-03-16
+#  Modified: 2026-03-24
 # ===========================================================
 
 import torch
@@ -33,24 +33,37 @@ class SimpleCNN(nn.Module):
         # Doubling filters at each block compensates for spatial resolution loss
         # from MaxPool, preserving representational capacity across the network.
         self.conv1 = nn.Conv2d(in_channels=3, out_channels=32, kernel_size=3, padding=1)
+        # Conv → BN → ReLU: standard order from He et al. (2015) — "Deep Residual
+        # Learning for Image Recognition" (arxiv:1512.03385). BN normalizes
+        # activations before ReLU, ensuring a centered distribution that reduces
+        # dead neurons during training.
         self.bn1 = nn.BatchNorm2d(32)
         self.relu1 = nn.ReLU()
         self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2)
 
         # --- Block 2 - Deeper feature extraction ---
-        self.conv2 = nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, padding=1)
+        self.conv2 = nn.Conv2d(
+            in_channels=32, out_channels=64, kernel_size=3, padding=1
+        )
         self.bn2 = nn.BatchNorm2d(64)
         self.relu2 = nn.ReLU()
         self.pool2 = nn.MaxPool2d(kernel_size=2, stride=2)
 
         # --- Block 3 - Adaptation & Classification (AdaptiveAvgPool to force 4x4 output) ---
+        # AdaptiveAvgPool2d((4,4)): forces output to 4×4 regardless of input resolution,
+        # making the model resolution-agnostic. AvgPool aggregates spatial information
+        # smoothly (vs MaxPool which is more aggressive) - better suited for a
+        # classification head. 4×4 yields 64×16=1024 features ; a balance between
+        # representational richness and FC layer size.
         self.adaptive_pool = nn.AdaptiveAvgPool2d((4, 4))
         self.flatten = nn.Flatten()
 
-        # Dropout(p=0.3) before the FC layer randomly deactivates 30% of neurons
-        # during training, acting as a regularizer to reduce overfitting.
-        # 64 channels * output (4 * 4) = 1024
+        # Dropout(p=0.3): conservative rate chosen over p=0.5 because SimpleCNN
+        # is small — aggressive dropout would prevent convergence in ≤20 epochs.
+        # Applied only before FC: conv feature maps are spatially correlated,
+        # making per-neuron dropout less effective than channel-level dropout.
         self.dropout = nn.Dropout(p=0.3)
+        # 64 channels * output (4 * 4) = 1024
         self.fc = nn.Linear(in_features=1024, out_features=num_classes)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -89,6 +102,11 @@ class SimpleCNN(nn.Module):
 
         Returns:
             torch.Tensor: Filter weights of shape (out_channels, Height, Width)
+
+        Note: filter_index=0 is an arbitrary choice for demonstration purposes.
+        The testbench validates that hardware == software for ANY filter —
+        the numerical result differs per filter but the property being validated
+        (cycle-accurate MAC correctness) is filter-agnostic.
         """
         with torch.no_grad():
             weights = self.conv1.weight[filter_index].cpu().clone()
