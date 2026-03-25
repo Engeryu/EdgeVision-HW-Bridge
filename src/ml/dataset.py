@@ -6,6 +6,7 @@
 # ===========================================================
 
 import logging
+import os
 import shutil
 import zipfile
 from pathlib import Path
@@ -72,12 +73,8 @@ def _get_cifar10(data_dir: Path) -> tuple:
         ]
     )
 
-    train = datasets.CIFAR10(
-        root=data_dir, train=True, download=True, transform=transform_train
-    )
-    test = datasets.CIFAR10(
-        root=data_dir, train=False, download=True, transform=transform_test
-    )
+    train = datasets.CIFAR10(root=data_dir, train=True, download=True, transform=transform_train)
+    test = datasets.CIFAR10(root=data_dir, train=False, download=True, transform=transform_test)
     return train, test
 
 
@@ -117,9 +114,7 @@ def _get_tiny_imagenet(data_dir: Path) -> tuple:
         else:
             expected_count = 0
         moved_count = sum(
-            len(list(d.iterdir()))
-            for d in val_dir.iterdir()
-            if d.is_dir() and d.name != "images"
+            len(list(d.iterdir())) for d in val_dir.iterdir() if d.is_dir() and d.name != "images"
         )
 
         if moved_count < expected_count:
@@ -163,9 +158,7 @@ def _get_tiny_imagenet(data_dir: Path) -> tuple:
         ]
     )
 
-    train = datasets.ImageFolder(
-        root=str(tiny_dir / "train"), transform=transform_train
-    )
+    train = datasets.ImageFolder(root=str(tiny_dir / "train"), transform=transform_train)
     test = datasets.ImageFolder(root=str(val_dir), transform=transform_test)
     return train, test
 
