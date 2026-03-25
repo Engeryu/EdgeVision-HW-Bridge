@@ -42,9 +42,7 @@ class SimpleCNN(nn.Module):
         self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2)
 
         # --- Block 2 - Deeper feature extraction ---
-        self.conv2 = nn.Conv2d(
-            in_channels=32, out_channels=64, kernel_size=3, padding=1
-        )
+        self.conv2 = nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, padding=1)
         self.bn2 = nn.BatchNorm2d(64)
         self.relu2 = nn.ReLU()
         self.pool2 = nn.MaxPool2d(kernel_size=2, stride=2)

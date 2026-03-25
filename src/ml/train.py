@@ -113,9 +113,7 @@ def apply_dataset_preset() -> None:
     for field, value in preset.items():
         if getattr(cfg.ml, field) == getattr(defaults, field):
             setattr(cfg.ml, field, value)
-            logger.info(
-                f"Preset applied: {field} = {value} (dataset: {cfg.ml.dataset})"
-            )
+            logger.info(f"Preset applied: {field} = {value} (dataset: {cfg.ml.dataset})")
 
 
 class Trainer:
@@ -173,9 +171,7 @@ class Trainer:
         else:
             self.scheduler = CosineAnnealingLR(self.optimizer, T_max=cfg.ml.epoch)
 
-        self.scaler = GradScaler(
-            enabled=cfg.ml.mixed_precision and self.device.type == "cuda"
-        )
+        self.scaler = GradScaler(enabled=cfg.ml.mixed_precision and self.device.type == "cuda")
 
     def train_one_epoch(self) -> None:
         """
@@ -269,9 +265,7 @@ class Trainer:
             },
             save_path,
         )
-        logger.info(
-            f"Checkpoint saved: {save_path} (epoch={epoch}, acc={best_acc:.2f}%)"
-        )
+        logger.info(f"Checkpoint saved: {save_path} (epoch={epoch}, acc={best_acc:.2f}%)")
         logger.info("The model is ready to be transferred to Hardware!")
 
     def run(self) -> None:
@@ -324,9 +318,7 @@ class Trainer:
                 self.save(epoch, best_acc)
             else:
                 patience_counter += 1
-                logger.info(
-                    f"No improvement for {patience_counter}/{patience} epoch(s)."
-                )
+                logger.info(f"No improvement for {patience_counter}/{patience} epoch(s).")
 
             if patience > 0 and patience_counter >= patience:
                 logger.info(f"Early stopping triggered after {epoch} epochs.")
