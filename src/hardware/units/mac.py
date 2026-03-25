@@ -5,7 +5,7 @@
 #  Modified: 2026-03-25
 # ===========================================================
 
-from amaranth import Elaboratable, Module, Platform, Signal, signed
+from amaranth import Elaboratable, Module, Signal, signed
 
 from src.config import cfg
 
@@ -29,7 +29,7 @@ class MACUnit(Elaboratable):
         # ~435k → 19 bits needed, *3 gives safe 24-bit margin
         self.result_out = Signal(signed(bit_width * 3), name="result_out")
 
-    def elaborate(self, platform: Platform | None) -> Module:
+    def elaborate(self, platform: object) -> Module:
         """
         Physical description of the component's internal synchronous logic.
 
@@ -49,7 +49,9 @@ class MACUnit(Elaboratable):
         with m.If(self.clear):
             m.d.sync += self.result_out.eq(0)
         with m.Else():
-            m.d.sync += self.result_out.eq(self.result_out + (self.pixel_in * self.weight_in))
+            m.d.sync += self.result_out.eq(
+                self.result_out + (self.pixel_in * self.weight_in)
+            )
 
         return m
 
@@ -60,7 +62,9 @@ def main() -> None:
     mac = MACUnit()
     with open("mac.v", "w") as f:
         f.write(
-            verilog.convert(mac, ports=[mac.pixel_in, mac.weight_in, mac.clear, mac.result_out])
+            verilog.convert(
+                mac, ports=[mac.pixel_in, mac.weight_in, mac.clear, mac.result_out]
+            )
         )
 
     print("The Verilog file 'mac.v' was successfully generated!")
